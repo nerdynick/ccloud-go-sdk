@@ -121,7 +121,7 @@ func (client MetricsClient) ListTopicsForMetric(cluster string, metric string) (
 }
 
 func (client MetricsClient) QueryMetric(cluster, metric string, topic string) ([]QueryData, error) {
-
+	return nil, nil
 }
 
 func (client MetricsClient) SendGet(path string) ([]byte, error) {
