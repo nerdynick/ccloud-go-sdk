@@ -1,27 +1,27 @@
 package ccloudmetrics
 
 type AvailableMetricLabel struct {
-	Name *string `json:"key"`
-	Desc *string `json:"description"`
+	Name string `json:"key"`
+	Desc string `json:"description"`
 }
 type AvailableMetric struct {
-	Name           *string                 `json:"name"`
-	Desc           *string                 `json:"description"`
-	Type           *string                 `json:"type"`
-	LifecycleStage *string                 `json:"lifecycle_stage"`
-	Labels         *[]AvailableMetricLabel `json:"labels"`
+	Name           string                 `json:"name"`
+	Desc           string                 `json:"description"`
+	Type           string                 `json:"type"`
+	LifecycleStage string                 `json:"lifecycle_stage"`
+	Labels         []AvailableMetricLabel `json:"labels"`
 }
 type AvailableMetricResponse struct {
-	AvailableMetrics *[]AvailableMetric `json:"data"`
-	Meta             *Meta              `json:"meta,omitempty"`
+	AvailableMetrics []AvailableMetric `json:"data"`
+	Meta             Meta              `json:"meta,omitempty"`
 }
 
 type CurrentlyAvailableMetric struct {
 	Name *string `json:"metric"`
 }
 type CurrentlyAvailableMetricResponse struct {
-	AvailableMetrics *[]CurrentlyAvailableMetric `json:"data"`
-	Meta             *Meta                       `json:"meta,omitempty"`
+	AvailableMetrics []CurrentlyAvailableMetric `json:"data"`
+	Meta             Meta                       `json:"meta,omitempty"`
 }
 
 type MetaPagination struct {
@@ -38,6 +38,7 @@ type QueryData struct {
 	Topic     string  `json:"metric.label.topic,omitempty"`
 	Cluster   string  `json:"metric.label.cluster_id,omitempty"`
 	Type      string  `json:"metric.label.type,omitempty"`
+	Partition string  `json:"metric.label.partition,omitempty"`
 }
 type QueryResponse struct {
 	Data []QueryData `json:"data"`
