@@ -75,3 +75,7 @@ func (am AvailableMetrics) outputCSV(writer *csv.Writer) error {
 	}
 	return nil
 }
+
+func init() {
+	listCmd.AddCommand(availableMetrics)
+}

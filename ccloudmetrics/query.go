@@ -40,6 +40,17 @@ const (
 	LifecycleStageGeneral string = "GENERAL_AVAILABILITY"
 )
 
+var (
+	AvailableGranularities []string = []string{
+		GranularityOneMin,
+		GranularityFiveMin,
+		GranularityFifteenMin,
+		GranularityThirtyMin,
+		GranularityOneHour,
+		GranularityAll,
+	}
+)
+
 // Query to Confluent Cloud API metric endpoint
 // This is the JSON structure for the endpoint
 // https://api.telemetry.confluent.cloud/v1/metrics/cloud/descriptors

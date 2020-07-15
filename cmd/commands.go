@@ -18,10 +18,6 @@ var (
 		Use:   "ccloudmetrics",
 		Short: "Confluent Cloud Metrics API CLI",
 	}
-	getCmd = &cobra.Command{
-		Use:   "get",
-		Short: "Get metrics back from the API",
-	}
 )
 
 //Global Vars
@@ -45,7 +41,6 @@ var (
 func init() {
 	cobra.OnInitialize(onInit)
 	//Root Commands
-	rootCmd.AddCommand(getCmd)
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&extraVerbose, "vvvv", false, "Extra Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&outputJSON, "json", false, "JSON output")

@@ -68,3 +68,11 @@ func (am TopicsForMetric) outputCSV(writer *csv.Writer) error {
 	}
 	return nil
 }
+
+func init() {
+	addClusterFlag(topicsForMetric.Flags())
+	addMetricFlag(topicsForMetric.Flags())
+	topicsForMetric.Flags().StringVar(&startTime, "start", time.Now().Add(time.Duration(-1)*time.Hour).Format(ccloudmetrics.TimeFormatStr), "Start Time in the format of "+ccloudmetrics.TimeFormatStr)
+	topicsForMetric.Flags().StringVar(&endTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)
+	listCmd.AddCommand(topicsForMetric)
+}
