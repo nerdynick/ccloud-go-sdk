@@ -4,7 +4,12 @@ Confluent Cloud Metrics API SDK for GO as well as a CLI for interaction with the
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/nerdynick/confluent-cloud-metrics-go-sdk)](https://goreportcard.com/report/github.com/nerdynick/confluent-cloud-metrics-go-sdk)
 [![Build Status](https://travis-ci.org/nerdynick/confluent-cloud-metrics-go-sdk.svg?branch=master)](https://travis-ci.org/nerdynick/confluent-cloud-metrics-go-sdk) 
-[![GoDoc](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk?status.svg)](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk)
+
+**Docs**
+![GoDoc](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk?status.svg)
+[Full Docs](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk) | 
+[SDK Docs](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk/cmd) | 
+[CLI Docs](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk/cmd)
 
 ## SDK
 
