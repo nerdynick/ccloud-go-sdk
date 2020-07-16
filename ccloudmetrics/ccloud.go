@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -25,13 +26,17 @@ const (
 	DefaultRequestTimeout int = 60
 	//DefaultUserAgent is the default user agent to send
 	DefaultUserAgent string = "ccloud-metrics-sdk/go"
+
+	//DefaultMaxWorkers controls the max number of workers in a given Worker Pool that will be spawned
+	DefaultMaxWorkers int = 5
 )
 
 //APIContext is the Contextual set of configs for all Metrics API calls
 type APIContext struct {
-	APIKey    string
-	APISecret string
-	BaseURL   string
+	APIKey     string
+	APISecret  string
+	BaseURL    string
+	MaxWorkers int
 }
 
 //HTTPContext is the Contextual set of configs for the HTTP Client making the calls to the Metrics API
@@ -64,20 +69,21 @@ func NewClientFromContext(context *APIContext, httpContext *HTTPContext) Metrics
 
 //NewClientMinimal Used to create a new MetricsClient from the given minimal set of properties
 func NewClientMinimal(apiKey string, apiSecret string) MetricsClient {
-	return NewClient(apiKey, apiSecret, DefaultBaseURL, DefaultRequestTimeout, "", nil)
+	return NewClientWithDefaults(apiKey, apiSecret, nil)
 }
 
 //NewClientWithDefaults Used to create a new MetricsClient from the minimal set of properties and using defaults where appropriate
 func NewClientWithDefaults(apiKey string, apiSecret string, extraHeaders map[string]string) MetricsClient {
-	return NewClient(apiKey, apiSecret, DefaultBaseURL, DefaultRequestTimeout, DefaultUserAgent, extraHeaders)
+	return NewClient(apiKey, apiSecret, DefaultBaseURL, DefaultRequestTimeout, DefaultUserAgent, DefaultMaxWorkers, extraHeaders)
 }
 
 //NewClient Used to create a new MetricsClient from the full set of properties
-func NewClient(apiKey string, apiSecret string, baseURL string, requestTime int, userAgent string, extraHeaders map[string]string) MetricsClient {
+func NewClient(apiKey string, apiSecret string, baseURL string, requestTime int, userAgent string, maxWorkers int, extraHeaders map[string]string) MetricsClient {
 	return NewClientFromContext(&APIContext{
-		APIKey:    apiKey,
-		APISecret: apiSecret,
-		BaseURL:   strOrDefault(baseURL, DefaultBaseURL),
+		APIKey:     apiKey,
+		APISecret:  apiSecret,
+		BaseURL:    strOrDefault(baseURL, DefaultBaseURL),
+		MaxWorkers: intOrDefault(maxWorkers, DefaultMaxWorkers),
 	}, &HTTPContext{
 		RequestTimeout: intOrDefault(requestTime, DefaultRequestTimeout),
 		UserAgent:      strOrDefault(userAgent, DefaultUserAgent),
@@ -147,7 +153,7 @@ func (client MetricsClient) GetTopicsForMetric(cluster string, metric string, st
 	return topics, nil
 }
 
-func (client MetricsClient) QueryMetric(cluster, metric string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
+func (client MetricsClient) QueryMetric(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
@@ -161,7 +167,7 @@ func (client MetricsClient) QueryMetric(cluster, metric string, granularity stri
 	return response.Data, err
 }
 
-func (client MetricsClient) QueryMetricForTopic(cluster, metric string, topic string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, topic string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster), NewTopicFilter(topic)),
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
@@ -179,12 +185,67 @@ func (client MetricsClient) QueryMetricForTopic(cluster, metric string, topic st
 	return response.Data, err
 }
 
-func (client MetricsClient) AsyncQueryMetricForTopic(cluster, metric string, topic string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, results chan<- QueryData, err chan<- error) {
+func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, workerId int, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
+	for topic := range topics {
+		res, err := client.QueryMetricAndTopic(cluster, metric, topic, granularity, startTime, endTime, includePartitions)
+		if err != nil {
+			errs <- err
+		} else {
+			results <- res
+		}
 
+	}
 }
 
 func (client MetricsClient) QueryMetricForTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
-	return nil, nil
+	topicChan := make(chan string, client.apiContext.MaxWorkers)
+	resultsChan := make(chan []QueryData, client.apiContext.MaxWorkers)
+	errorsChan := make(chan error, client.apiContext.MaxWorkers)
+
+	for id := 0; id < client.apiContext.MaxWorkers; id++ {
+		go client.QueryMetricAndTopicWorker(cluster, metric, granularity, startTime, endTime, includePartitions, id, topicChan, resultsChan, errorsChan)
+	}
+
+	for _, topic := range topics {
+		topicChan <- topic
+	}
+	close(topicChan)
+
+	finalErrors := []string{}
+	for err := range errorsChan {
+		finalErrors = append(finalErrors, err.Error())
+	}
+	if len(finalErrors) > 0 {
+		return nil, errors.New(strings.Join(finalErrors, "\n\n"))
+	}
+
+	queryData := []QueryData{}
+	for res := range resultsChan {
+		queryData = append(queryData, res...)
+	}
+
+	return queryData, nil
+}
+
+func (client MetricsClient) QueryMetricForAllTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
+	topics, err := client.GetTopicsForMetric(cluster, metric, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	finalTopics := []string{}
+
+OUTER:
+	for _, t := range topics {
+		for _, bt := range blacklistedTopics {
+			if t == bt {
+				continue OUTER
+			}
+		}
+		finalTopics = append(finalTopics, t)
+	}
+
+	return client.QueryMetricForTopics(cluster, metric, finalTopics, granularity, startTime, endTime, includePartitions)
 }
 
 func (client MetricsClient) SendGet(path string) ([]byte, error) {

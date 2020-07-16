@@ -51,7 +51,7 @@ func init() {
 	rootCmd.MarkPersistentFlagRequired("apisecret")
 	rootCmd.PersistentFlags().StringVarP(&apiContext.BaseURL, "baseurl", "b", ccloudmetrics.DefaultBaseURL, "API Base Url")
 	rootCmd.PersistentFlags().IntVarP(&httpContext.RequestTimeout, "timeout", "t", ccloudmetrics.DefaultRequestTimeout, "HTTP Request Timeout")
-	rootCmd.PersistentFlags().StringVarP(&httpContext.UserAgent, "agent", "a", ccloudmetrics.DefaultUserAgent, "HTTP User Agent")
+	rootCmd.PersistentFlags().StringVarP(&httpContext.UserAgent, "agent", "a", "ccloud-metrics-sdk/go-cli", "HTTP User Agent")
 }
 
 func onInit() {
