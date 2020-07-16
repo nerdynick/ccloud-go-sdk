@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -41,9 +43,11 @@ type APIContext struct {
 
 //HTTPContext is the Contextual set of configs for the HTTP Client making the calls to the Metrics API
 type HTTPContext struct {
-	RequestTimeout int
-	UserAgent      string
-	HTTPHeaders    map[string]string
+	RequestTimeout      int
+	UserAgent           string
+	HTTPHeaders         map[string]string
+	MaxIdleConns        int
+	MaxIdleConnsPerHost int
 }
 
 //MetricsClient is the SDK Client for making REST calls to the Confluent Metrics API
@@ -57,6 +61,10 @@ type MetricsClient struct {
 func NewClientFromContext(context *APIContext, httpContext *HTTPContext) MetricsClient {
 	httpClient := http.Client{
 		Timeout: time.Second * time.Duration(httpContext.RequestTimeout),
+		Transport: &http.Transport{
+			MaxIdleConns:        httpContext.MaxIdleConns,
+			MaxIdleConnsPerHost: httpContext.MaxIdleConnsPerHost,
+		},
 	}
 	client := MetricsClient{
 		httpClient:  httpClient,
@@ -249,6 +257,11 @@ OUTER:
 }
 
 func (client MetricsClient) SendGet(path string) ([]byte, error) {
+	if log.IsLevelEnabled(log.InfoLevel) {
+		log.WithFields(log.Fields{
+			"path": path,
+		}).Info("Sending GET Request")
+	}
 	return client.sendReq("GET", path, nil)
 }
 
@@ -256,6 +269,12 @@ func (client MetricsClient) SendPost(path string, query Query) ([]byte, error) {
 	jsonQuery, err := query.ToJSON()
 	if err != nil {
 		panic(err)
+	}
+	if log.IsLevelEnabled(log.InfoLevel) {
+		log.WithFields(log.Fields{
+			"path":  path,
+			"query": string(jsonQuery),
+		}).Info("Sending POST Request")
 	}
 	return client.sendReq("POST", path, bytes.NewBuffer(jsonQuery))
 }
@@ -274,6 +293,11 @@ func (client MetricsClient) SendQuery(path string, query Query) (QueryResponse, 
 }
 
 func (client MetricsClient) sendReq(method string, path string, body io.Reader) ([]byte, error) {
+	log.WithFields(log.Fields{
+		"method": method,
+		"path":   path,
+	}).Trace("Sending API Request")
+
 	endpoint := client.apiContext.BaseURL + path
 	req, err := http.NewRequest(method, endpoint, body)
 	if err != nil {
@@ -296,6 +320,7 @@ func (client MetricsClient) sendReq(method string, path string, body io.Reader) 
 		fmt.Printf(err.Error())
 		return nil, err
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
 		errorMsg := fmt.Sprintf("Received status code %d instead of 200 for %s on %s", res.StatusCode, method, endpoint)
@@ -306,6 +331,14 @@ func (client MetricsClient) sendReq(method string, path string, body io.Reader) 
 	if err != nil {
 		fmt.Printf(err.Error())
 		return nil, err
+	}
+
+	if log.IsLevelEnabled(log.TraceLevel) {
+		log.WithFields(log.Fields{
+			"method":  method,
+			"path":    path,
+			"results": string(resBody),
+		}).Trace("Api Request Results")
 	}
 
 	return resBody, nil

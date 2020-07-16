@@ -56,10 +56,12 @@ func init() {
 
 func onInit() {
 	if verbose || extraVerbose {
+		log.SetLevel(log.InfoLevel)
+
 		if extraVerbose {
 			log.SetReportCaller(true)
+			log.SetLevel(log.TraceLevel)
 		}
-		log.SetLevel(log.InfoLevel)
 	} else {
 		log.SetLevel(log.WarnLevel)
 	}
