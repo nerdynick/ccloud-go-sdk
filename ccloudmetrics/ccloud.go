@@ -317,19 +317,26 @@ func (client MetricsClient) sendReq(method string, path string, body io.Reader) 
 
 	res, err := client.httpClient.Do(req)
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("Error returned from HTTP Request")
 		return nil, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
 		errorMsg := fmt.Sprintf("Received status code %d instead of 200 for %s on %s", res.StatusCode, method, endpoint)
+		log.WithFields(log.Fields{
+			"statusCode": res.StatusCode,
+		}).Error(errorMsg)
 		return nil, errors.New(errorMsg)
 	}
 
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Printf(err.Error())
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("Error returned from HTTP Request")
 		return nil, err
 	}
 
