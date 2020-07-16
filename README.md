@@ -72,6 +72,19 @@ go get github.com/nerdynick/confluent-cloud-metrics-go-sdk
 The CLI is coded to be interacted with similar to GIT.
 It leverages the project [Cobra](https://github.com/spf13/cobra) to provide this experience.
 
+Command Tree
+
+* root
+  * list
+    * metrics - Query Available Metrics
+    * topics - Query Available Topics for a Metric
+  * query
+    * metric - Query Data for a metric
+    * metrics - Query Data for multipule metrics
+    * topic - Query Data for a metric and topic
+    * topics - Query Data for a metric and a list of topics
+      * all - Query Data for a metric and all available topics (Queries run in parallel for each topic)
+
 **List Available Metrics**
 
 ```shell

@@ -45,14 +45,20 @@ var (
 )
 
 func init() {
+	topicQueryCmd.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicQueryCmd.MarkFlagRequired("metric")
 	topicQueryCmd.Flags().StringVar(&topic, "topic", "", "Topic to query metric for")
 	topicQueryCmd.MarkFlagRequired("topic")
 	topicQueryCmd.Flags().BoolVar(&includePartitions, "partitions", false, "Should results be aggrigated to the parition or just to the topic")
 	queryCmd.AddCommand(topicQueryCmd)
 
+	topicsAllQueryCmd.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicsAllQueryCmd.MarkFlagRequired("metric")
 	topicsAllQueryCmd.Flags().StringArrayVar(&blacklistedTopics, "blacklist", []string{}, "List of Topics to blacklist from getting fetch")
 	topicsQueryCmd.AddCommand(topicsAllQueryCmd)
 
+	topicsQueryCmd.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicsQueryCmd.MarkFlagRequired("metric")
 	topicsQueryCmd.Flags().StringArrayVar(&topics, "topics", []string{}, "List of Topics to query for")
 	topicsQueryCmd.MarkFlagRequired("topics")
 	queryCmd.AddCommand(topicsQueryCmd)
