@@ -41,6 +41,7 @@ type APIContext struct {
 	MaxWorkers int
 }
 
+//NewAPIContext creates a new instance of the APIContext loaded with the defaults where possible
 func NewAPIContext(apiKey string, apiSecret string) APIContext {
 	return APIContext{
 		APIKey:     apiKey,
@@ -59,6 +60,7 @@ type HTTPContext struct {
 	MaxIdleConnsPerHost int
 }
 
+//NewHTTPContext creates a new instance of the HTTPContext loaded with the defaults where possible
 func NewHTTPContext() HTTPContext {
 	return HTTPContext{
 		RequestTimeout:      DefaultRequestTimeout,
@@ -140,6 +142,7 @@ func intOrDefault(val int, def int) int {
 	return def
 }
 
+//GetAvailableMetrics returns a collection of all the available metrics and their supported labels among other important meta data
 func (client MetricsClient) GetAvailableMetrics() ([]AvailableMetric, error) {
 	result, err := client.SendGet(descriptorPath)
 
@@ -153,6 +156,7 @@ func (client MetricsClient) GetAvailableMetrics() ([]AvailableMetric, error) {
 	return response.AvailableMetrics, nil
 }
 
+//GetCurrentlyAvailableMetrics returns all the currently available metrics and their supported labels among other important meta data
 func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]CurrentlyAvailableMetric, error) {
 	query := Query{
 		Filter: NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
@@ -169,6 +173,7 @@ func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]Curr
 	return response.AvailableMetrics, nil
 }
 
+//GetTopicsForMetric returns all the available topics for a given metric within a window of time
 func (client MetricsClient) GetTopicsForMetric(cluster string, metric string, startTime time.Time, endTime time.Time) ([]string, error) {
 	query := Query{
 		Filter:    NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
@@ -189,6 +194,7 @@ func (client MetricsClient) GetTopicsForMetric(cluster string, metric string, st
 	return topics, nil
 }
 
+//QueryMetric returns all the data points for a given metric, aggregated up to the given granularity, within the given window of time
 func (client MetricsClient) QueryMetric(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
@@ -203,6 +209,7 @@ func (client MetricsClient) QueryMetric(cluster string, metric string, granulari
 	return response.Data, err
 }
 
+//QueryMetricAndTopic returns all the data points for a given metric and topic, aggregated up to the given granularity, within the given window of time
 func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, topic string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster), NewTopicFilter(topic)),
@@ -221,11 +228,12 @@ func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, t
 	return response.Data, err
 }
 
-func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, workerId int, wg *sync.WaitGroup, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
+//QueryMetricAndTopicWorker returns all the data points, fetched in parallel, for a given metric and topics, aggregated up to the given granularity, within the given window of time
+func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, workerID int, wg *sync.WaitGroup, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
 	for topic := range topics {
 		log.WithFields(log.Fields{
 			"topic":  topic,
-			"worker": workerId,
+			"worker": workerID,
 		}).Debug("Handling Topic")
 
 		res, err := client.QueryMetricAndTopic(cluster, metric, topic, granularity, startTime, endTime, includePartitions)
@@ -238,14 +246,15 @@ func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric str
 
 		log.WithFields(log.Fields{
 			"topic":  topic,
-			"worker": workerId,
+			"worker": workerID,
 		}).Debug("Handled Topic")
 	}
 	log.WithFields(log.Fields{
-		"worker": workerId,
+		"worker": workerID,
 	}).Debug("Worker Done")
 }
 
+//QueryMetricAndTopics returns all the data points, fetched in parallel, for a given metric and topics, aggregated up to the given granularity, within the given window of time
 func (client MetricsClient) QueryMetricAndTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
 	topicChan := make(chan string, len(topics))
 	resultsChan := make(chan []QueryData, len(topics))
@@ -290,6 +299,7 @@ func (client MetricsClient) QueryMetricAndTopics(cluster, metric string, topics 
 	return queryData, nil
 }
 
+//QueryMetricForAllTopics returns all the data points, fetched in parallel, for a given metric and all available topics (As returned by GetTopicsForMetric), aggregated up to the given granularity, within the given window of time
 func (client MetricsClient) QueryMetricForAllTopics(cluster, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
 	topics, err := client.GetTopicsForMetric(cluster, metric, startTime, endTime)
 	if err != nil {
@@ -316,6 +326,7 @@ OUTER:
 	return client.QueryMetricAndTopics(cluster, metric, finalTopics, granularity, startTime, endTime, includePartitions)
 }
 
+//SendGet send a HTTP GET request to the metrics API at the given path
 func (client MetricsClient) SendGet(path string) ([]byte, error) {
 	if log.IsLevelEnabled(log.InfoLevel) {
 		log.WithFields(log.Fields{
@@ -332,6 +343,7 @@ func (client MetricsClient) SendGet(path string) ([]byte, error) {
 	return res, err
 }
 
+//SendPost sends a HTTP POST request to the metrics API at the given path with the given Query as the post body
 func (client MetricsClient) SendPost(path string, query Query) ([]byte, error) {
 	jsonQuery, err := query.ToJSON()
 	if err != nil {
@@ -354,6 +366,7 @@ func (client MetricsClient) SendPost(path string, query Query) ([]byte, error) {
 	return res, err
 }
 
+//SendQuery sends a HTTP POST request to the metrics API at the given path with the given Query as the post body and Unmarshals the resulted JSON into a QueryResponse
 func (client MetricsClient) SendQuery(path string, query Query) (QueryResponse, error) {
 	result, err := client.SendPost(path, query)
 
