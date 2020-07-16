@@ -83,9 +83,6 @@ func init() {
 	queryCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "", "Confluent Cloud Cluster ID")
 	queryCmd.MarkPersistentFlagRequired("cluster")
 
-	queryCmd.PersistentFlags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
-	queryCmd.MarkPersistentFlagRequired("metric")
-
 	queryCmd.PersistentFlags().StringVar(&startTime, "start", time.Now().Add(time.Duration(-1)*time.Hour).Format(ccloudmetrics.TimeFormatStr), "Start Time in the format of "+ccloudmetrics.TimeFormatStr)
 	queryCmd.PersistentFlags().StringVar(&endTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)
 	queryCmd.PersistentFlags().IntVar(&lastXmin, "last", 0, "Instead of using start/end time. Query for the last X mins")
