@@ -70,8 +70,12 @@ func (am TopicsForMetric) outputCSV(writer *csv.Writer) error {
 }
 
 func init() {
-	addClusterFlag(topicsForMetric.Flags())
-	addMetricFlag(topicsForMetric.Flags())
+	topicsForMetric.Flags().StringVarP(&cluster, "cluster", "c", "", "Confluent Cloud Cluster ID")
+	topicsForMetric.MarkFlagRequired("cluster")
+
+	topicsForMetric.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicsForMetric.MarkFlagRequired("metric")
+
 	topicsForMetric.Flags().StringVar(&startTime, "start", time.Now().Add(time.Duration(-1)*time.Hour).Format(ccloudmetrics.TimeFormatStr), "Start Time in the format of "+ccloudmetrics.TimeFormatStr)
 	topicsForMetric.Flags().StringVar(&endTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)
 	listCmd.AddCommand(topicsForMetric)

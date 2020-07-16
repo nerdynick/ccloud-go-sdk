@@ -17,8 +17,30 @@ var topicQueryCmd = &cobra.Command{
 	}),
 }
 
+var topicsQueryCmd = &cobra.Command{
+	Use:   "topics",
+	Short: "Query a collection of topics for a particular metric",
+	RunE: runE(&Query{
+		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, sTime time.Time, eTime time.Time) ([]ccloudmetrics.QueryData, error) {
+			return client.QueryMetricAndTopics(cluster, metric, topics, granularity, sTime, eTime, includePartitions)
+		},
+	}),
+}
+
+var topicsAllQueryCmd = &cobra.Command{
+	Use:   "all",
+	Short: "Query all topics for a particular metric",
+	RunE: runE(&Query{
+		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, sTime time.Time, eTime time.Time) ([]ccloudmetrics.QueryData, error) {
+			return client.QueryMetricForAllTopics(cluster, metric, granularity, sTime, eTime, includePartitions, blacklistedTopics)
+		},
+	}),
+}
+
 var (
 	topic             string
+	topics            []string
+	blacklistedTopics []string
 	includePartitions bool
 )
 
@@ -27,4 +49,11 @@ func init() {
 	topicQueryCmd.MarkFlagRequired("topic")
 	topicQueryCmd.Flags().BoolVar(&includePartitions, "partitions", false, "Should results be aggrigated to the parition or just to the topic")
 	queryCmd.AddCommand(topicQueryCmd)
+
+	topicsAllQueryCmd.Flags().StringArrayVar(&blacklistedTopics, "blacklist", []string{}, "List of Topics to blacklist from getting fetch")
+	topicsQueryCmd.AddCommand(topicsAllQueryCmd)
+
+	topicsQueryCmd.Flags().StringArrayVar(&topics, "topics", []string{}, "List of Topics to query for")
+	topicsQueryCmd.MarkFlagRequired("topics")
+	queryCmd.AddCommand(topicsQueryCmd)
 }

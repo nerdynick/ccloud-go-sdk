@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -41,6 +41,15 @@ type APIContext struct {
 	MaxWorkers int
 }
 
+func NewAPIContext(apiKey string, apiSecret string) APIContext {
+	return APIContext{
+		APIKey:     apiKey,
+		APISecret:  apiSecret,
+		BaseURL:    DefaultBaseURL,
+		MaxWorkers: DefaultMaxWorkers,
+	}
+}
+
 //HTTPContext is the Contextual set of configs for the HTTP Client making the calls to the Metrics API
 type HTTPContext struct {
 	RequestTimeout      int
@@ -48,6 +57,16 @@ type HTTPContext struct {
 	HTTPHeaders         map[string]string
 	MaxIdleConns        int
 	MaxIdleConnsPerHost int
+}
+
+func NewHTTPContext() HTTPContext {
+	return HTTPContext{
+		RequestTimeout:      DefaultRequestTimeout,
+		UserAgent:           DefaultUserAgent,
+		HTTPHeaders:         nil,
+		MaxIdleConns:        DefaultMaxWorkers,
+		MaxIdleConnsPerHost: DefaultMaxWorkers,
+	}
 }
 
 //MetricsClient is the SDK Client for making REST calls to the Confluent Metrics API
@@ -58,18 +77,23 @@ type MetricsClient struct {
 }
 
 //NewClientFromContext Used to create a new MetricsClient from the given contexts
-func NewClientFromContext(context *APIContext, httpContext *HTTPContext) MetricsClient {
+func NewClientFromContext(context APIContext, httpContext HTTPContext) MetricsClient {
+	log.WithFields(log.Fields{
+		"APIContext":  context,
+		"HTTPContext": httpContext,
+	}).Trace("Creating new Metrics Client")
+
 	httpClient := http.Client{
 		Timeout: time.Second * time.Duration(httpContext.RequestTimeout),
-		Transport: &http.Transport{
-			MaxIdleConns:        httpContext.MaxIdleConns,
-			MaxIdleConnsPerHost: httpContext.MaxIdleConnsPerHost,
-		},
+		// Transport: &http.Transport{
+		// 	MaxIdleConns:        httpContext.MaxIdleConns,
+		// 	MaxIdleConnsPerHost: httpContext.MaxIdleConnsPerHost,
+		// },
 	}
 	client := MetricsClient{
 		httpClient:  httpClient,
-		apiContext:  *context,
-		httpContext: *httpContext,
+		apiContext:  context,
+		httpContext: httpContext,
 	}
 
 	return client
@@ -77,25 +101,29 @@ func NewClientFromContext(context *APIContext, httpContext *HTTPContext) Metrics
 
 //NewClientMinimal Used to create a new MetricsClient from the given minimal set of properties
 func NewClientMinimal(apiKey string, apiSecret string) MetricsClient {
-	return NewClientWithDefaults(apiKey, apiSecret, nil)
+	return NewClientFromContext(NewAPIContext(apiKey, apiSecret), NewHTTPContext())
 }
 
 //NewClientWithDefaults Used to create a new MetricsClient from the minimal set of properties and using defaults where appropriate
 func NewClientWithDefaults(apiKey string, apiSecret string, extraHeaders map[string]string) MetricsClient {
-	return NewClient(apiKey, apiSecret, DefaultBaseURL, DefaultRequestTimeout, DefaultUserAgent, DefaultMaxWorkers, extraHeaders)
+	httpContext := NewHTTPContext()
+	httpContext.HTTPHeaders = extraHeaders
+	return NewClientFromContext(NewAPIContext(apiKey, apiSecret), httpContext)
 }
 
 //NewClient Used to create a new MetricsClient from the full set of properties
 func NewClient(apiKey string, apiSecret string, baseURL string, requestTime int, userAgent string, maxWorkers int, extraHeaders map[string]string) MetricsClient {
-	return NewClientFromContext(&APIContext{
+	return NewClientFromContext(APIContext{
 		APIKey:     apiKey,
 		APISecret:  apiSecret,
 		BaseURL:    strOrDefault(baseURL, DefaultBaseURL),
 		MaxWorkers: intOrDefault(maxWorkers, DefaultMaxWorkers),
-	}, &HTTPContext{
-		RequestTimeout: intOrDefault(requestTime, DefaultRequestTimeout),
-		UserAgent:      strOrDefault(userAgent, DefaultUserAgent),
-		HTTPHeaders:    extraHeaders,
+	}, HTTPContext{
+		RequestTimeout:      intOrDefault(requestTime, DefaultRequestTimeout),
+		UserAgent:           strOrDefault(userAgent, DefaultUserAgent),
+		HTTPHeaders:         extraHeaders,
+		MaxIdleConnsPerHost: intOrDefault(maxWorkers, DefaultMaxWorkers),
+		MaxIdleConns:        intOrDefault(maxWorkers, DefaultMaxWorkers),
 	})
 }
 
@@ -171,7 +199,7 @@ func (client MetricsClient) QueryMetric(cluster string, metric string, granulari
 		Limit:       DefaultQueryLimit,
 	}
 
-	response, err := client.SendQuery(attributesPath, query)
+	response, err := client.SendQuery(queryPath, query)
 	return response.Data, err
 }
 
@@ -189,44 +217,71 @@ func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, t
 		query.GroupBy = append(query.GroupBy, MetricLabelPartition)
 	}
 
-	response, err := client.SendQuery(attributesPath, query)
+	response, err := client.SendQuery(queryPath, query)
 	return response.Data, err
 }
 
-func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, workerId int, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
+func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, workerId int, wg *sync.WaitGroup, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
 	for topic := range topics {
+		log.WithFields(log.Fields{
+			"topic":  topic,
+			"worker": workerId,
+		}).Debug("Handling Topic")
+
 		res, err := client.QueryMetricAndTopic(cluster, metric, topic, granularity, startTime, endTime, includePartitions)
 		if err != nil {
 			errs <- err
 		} else {
 			results <- res
 		}
+		wg.Done()
 
+		log.WithFields(log.Fields{
+			"topic":  topic,
+			"worker": workerId,
+		}).Debug("Handled Topic")
 	}
+	log.WithFields(log.Fields{
+		"worker": workerId,
+	}).Debug("Worker Done")
 }
 
-func (client MetricsClient) QueryMetricForTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
-	topicChan := make(chan string, client.apiContext.MaxWorkers)
-	resultsChan := make(chan []QueryData, client.apiContext.MaxWorkers)
-	errorsChan := make(chan error, client.apiContext.MaxWorkers)
+func (client MetricsClient) QueryMetricAndTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+	topicChan := make(chan string, len(topics))
+	resultsChan := make(chan []QueryData, len(topics))
+	errorsChan := make(chan error, len(topics))
+	waitGroup := sync.WaitGroup{}
 
+	log.Debug("Starting up routines")
 	for id := 0; id < client.apiContext.MaxWorkers; id++ {
-		go client.QueryMetricAndTopicWorker(cluster, metric, granularity, startTime, endTime, includePartitions, id, topicChan, resultsChan, errorsChan)
+		go client.QueryMetricAndTopicWorker(cluster, metric, granularity, startTime, endTime, includePartitions, id, &waitGroup, topicChan, resultsChan, errorsChan)
 	}
 
+	log.Debug("Sending Topics")
 	for _, topic := range topics {
+		log.Debug("Sending Topic: " + topic)
 		topicChan <- topic
+		waitGroup.Add(1)
 	}
+	log.Debug("Done Sending Topics. Closing Channel")
 	close(topicChan)
 
+	waitGroup.Wait()
+	close(resultsChan)
+	close(errorsChan)
+
+	log.Debug("Processing Errors")
 	finalErrors := []string{}
 	for err := range errorsChan {
 		finalErrors = append(finalErrors, err.Error())
 	}
 	if len(finalErrors) > 0 {
-		return nil, errors.New(strings.Join(finalErrors, "\n\n"))
+		err := errors.New(strings.Join(finalErrors, "\n\n"))
+		log.Error("Got Error" + err.Error())
+		return nil, err
 	}
 
+	log.Debug("Processing Results")
 	queryData := []QueryData{}
 	for res := range resultsChan {
 		queryData = append(queryData, res...)
@@ -235,7 +290,7 @@ func (client MetricsClient) QueryMetricForTopics(cluster, metric string, topics 
 	return queryData, nil
 }
 
-func (client MetricsClient) QueryMetricForAllTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricForAllTopics(cluster, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
 	topics, err := client.GetTopicsForMetric(cluster, metric, startTime, endTime)
 	if err != nil {
 		return nil, err
@@ -253,16 +308,28 @@ OUTER:
 		finalTopics = append(finalTopics, t)
 	}
 
-	return client.QueryMetricForTopics(cluster, metric, finalTopics, granularity, startTime, endTime, includePartitions)
+	log.WithFields(log.Fields{
+		"topics": finalTopics,
+		"metric": metric,
+	}).Debug("Getting Results for All topics")
+
+	return client.QueryMetricAndTopics(cluster, metric, finalTopics, granularity, startTime, endTime, includePartitions)
 }
 
 func (client MetricsClient) SendGet(path string) ([]byte, error) {
 	if log.IsLevelEnabled(log.InfoLevel) {
 		log.WithFields(log.Fields{
 			"path": path,
-		}).Info("Sending GET Request")
+		}).Debug("Sending GET Request")
 	}
-	return client.sendReq("GET", path, nil)
+	res, err := client.sendReq("GET", path, nil)
+	if log.IsLevelEnabled(log.TraceLevel) {
+		log.WithFields(log.Fields{
+			"path":   path,
+			"result": string(res),
+		}).Trace("Recieved GET Response")
+	}
+	return res, err
 }
 
 func (client MetricsClient) SendPost(path string, query Query) ([]byte, error) {
@@ -270,13 +337,21 @@ func (client MetricsClient) SendPost(path string, query Query) ([]byte, error) {
 	if err != nil {
 		panic(err)
 	}
-	if log.IsLevelEnabled(log.InfoLevel) {
+	if log.IsLevelEnabled(log.TraceLevel) {
 		log.WithFields(log.Fields{
 			"path":  path,
 			"query": string(jsonQuery),
-		}).Info("Sending POST Request")
+		}).Trace("Sending POST Request")
 	}
-	return client.sendReq("POST", path, bytes.NewBuffer(jsonQuery))
+	res, err := client.sendReq("POST", path, jsonQuery)
+	if log.IsLevelEnabled(log.TraceLevel) {
+		log.WithFields(log.Fields{
+			"path":   path,
+			"query":  string(jsonQuery),
+			"result": string(res),
+		}).Trace("Recieved POST Response")
+	}
+	return res, err
 }
 
 func (client MetricsClient) SendQuery(path string, query Query) (QueryResponse, error) {
@@ -292,14 +367,15 @@ func (client MetricsClient) SendQuery(path string, query Query) (QueryResponse, 
 	return response, nil
 }
 
-func (client MetricsClient) sendReq(method string, path string, body io.Reader) ([]byte, error) {
+func (client MetricsClient) sendReq(method string, path string, body []byte) ([]byte, error) {
 	log.WithFields(log.Fields{
 		"method": method,
 		"path":   path,
 	}).Trace("Sending API Request")
 
 	endpoint := client.apiContext.BaseURL + path
-	req, err := http.NewRequest(method, endpoint, body)
+	req, err := http.NewRequest(method, endpoint, bytes.NewBuffer(body))
+
 	if err != nil {
 		panic(err)
 	}
@@ -316,18 +392,22 @@ func (client MetricsClient) sendReq(method string, path string, body io.Reader) 
 	}
 
 	res, err := client.httpClient.Do(req)
+	if res != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error("Error returned from HTTP Request")
 		return nil, err
 	}
-	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
 		errorMsg := fmt.Sprintf("Received status code %d instead of 200 for %s on %s", res.StatusCode, method, endpoint)
 		log.WithFields(log.Fields{
-			"statusCode": res.StatusCode,
+			"statusCode":    res.StatusCode,
+			"statusMessage": res.Status,
+			"body":          string(body),
 		}).Error(errorMsg)
 		return nil, errors.New(errorMsg)
 	}

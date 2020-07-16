@@ -7,8 +7,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/spf13/pflag"
-
 	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/ccloudmetrics"
 	"github.com/spf13/cobra"
 )
@@ -22,12 +20,13 @@ var (
 
 //Global Vars
 var (
-	verbose      bool
-	extraVerbose bool
-	outputJSON   bool
-	outputCSV    bool
-	apiContext   ccloudmetrics.APIContext
-	httpContext  ccloudmetrics.HTTPContext
+	verbose           bool
+	extraVerbose      bool
+	extraExtraVerbose bool
+	outputJSON        bool
+	outputCSV         bool
+	apiContext        ccloudmetrics.APIContext  = ccloudmetrics.NewAPIContext("", "")
+	httpContext       ccloudmetrics.HTTPContext = ccloudmetrics.NewHTTPContext()
 )
 
 //Common Command Vars
@@ -40,9 +39,16 @@ var (
 
 func init() {
 	cobra.OnInitialize(onInit)
+
+	log.WithFields(log.Fields{
+		"APIContext":  apiContext,
+		"HTTPContext": httpContext,
+	}).Trace("Initial Contexts")
+
 	//Root Commands
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
-	rootCmd.PersistentFlags().BoolVar(&extraVerbose, "vvvv", false, "Extra Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&verbose, "v", false, "Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&extraVerbose, "vv", false, "Extra Verbose output")
+	rootCmd.PersistentFlags().BoolVar(&extraExtraVerbose, "vvv", false, "Extra Extra Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&outputJSON, "json", false, "JSON output")
 	rootCmd.PersistentFlags().BoolVar(&outputCSV, "csv", false, "CSV output")
 	rootCmd.PersistentFlags().StringVarP(&apiContext.APIKey, "apikey", "k", "", "API Key")
@@ -55,10 +61,14 @@ func init() {
 }
 
 func onInit() {
-	if verbose || extraVerbose {
+	if verbose || extraVerbose || extraExtraVerbose {
 		log.SetLevel(log.InfoLevel)
 
 		if extraVerbose {
+			log.SetLevel(log.DebugLevel)
+		}
+
+		if extraExtraVerbose {
 			log.SetReportCaller(true)
 			log.SetLevel(log.TraceLevel)
 		}
@@ -67,18 +77,8 @@ func onInit() {
 	}
 }
 
-func addClusterFlag(flagSet *pflag.FlagSet) {
-	topicsForMetric.Flags().StringVarP(&cluster, "cluster", "c", "", "Confluent Cloud Cluster ID")
-	topicsForMetric.MarkFlagRequired("cluster")
-}
-
-func addMetricFlag(flagSet *pflag.FlagSet) {
-	topicsForMetric.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
-	topicsForMetric.MarkFlagRequired("metric")
-}
-
 func getClient() ccloudmetrics.MetricsClient {
-	return ccloudmetrics.NewClientFromContext(&apiContext, &httpContext)
+	return ccloudmetrics.NewClientFromContext(apiContext, httpContext)
 }
 
 type runFunc interface {
