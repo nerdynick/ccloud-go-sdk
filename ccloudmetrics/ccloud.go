@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -31,6 +32,15 @@ const (
 
 	//DefaultMaxWorkers controls the max number of workers in a given Worker Pool that will be spawned
 	DefaultMaxWorkers int = 5
+)
+
+var (
+	cJSON = jsoniter.Config{
+		EscapeHTML:             true,
+		SortMapKeys:            true,
+		ValidateJsonRawMessage: true,
+		TagKey:                 "cjson",
+	}.Froze()
 )
 
 //APIContext is the Contextual set of configs for all Metrics API calls
@@ -157,7 +167,7 @@ func (client MetricsClient) GetAvailableMetrics() ([]AvailableMetric, error) {
 }
 
 //GetCurrentlyAvailableMetrics returns all the currently available metrics and their supported labels among other important meta data
-func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]CurrentlyAvailableMetric, error) {
+func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]AvailableMetric, error) {
 	query := Query{
 		Filter: NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
 	}
@@ -167,8 +177,8 @@ func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]Curr
 		return nil, err
 	}
 
-	response := CurrentlyAvailableMetricResponse{}
-	json.Unmarshal(result, &response)
+	response := AvailableMetricResponse{}
+	cJSON.Unmarshal(result, &response)
 
 	return response.AvailableMetrics, nil
 }
