@@ -29,18 +29,27 @@ const (
 	//MetricLabelPartition is a static def for the Partition Label
 	MetricLabelPartition string = "metric.label.partition"
 
-	GranularityOneMin     string = "PT1M"
-	GranularityFiveMin    string = "PT5M"
+	//GranularityOneMin is a static def for the 1 minute grantularity string
+	GranularityOneMin string = "PT1M"
+	//GranularityFiveMin is a static def for the 5 minute grantularity string
+	GranularityFiveMin string = "PT5M"
+	//GranularityFifteenMin is a static def for the 15 minute grantularity string
 	GranularityFifteenMin string = "PT15M"
-	GranularityThirtyMin  string = "PT30M"
-	GranularityOneHour    string = "PT1H"
-	GranularityAll        string = "ALL"
+	//GranularityThirtyMin is a static def for the 30 minute grantularity string
+	GranularityThirtyMin string = "PT30M"
+	//GranularityOneHour is a static def for the 1 hour grantularity string
+	GranularityOneHour string = "PT1H"
+	//GranularityAll is a static def for the ALL grantularity string
+	GranularityAll string = "ALL"
 
+	//LifecycleStagePreview is a static def for referencing the PREVIEW Lifecycle Stage of a metric
 	LifecycleStagePreview string = "PREVIEW"
+	//LifecycleStageGeneral is a static def for referencing the GENERAL_AVAILABILITY Lifecycle Stage of a metric
 	LifecycleStageGeneral string = "GENERAL_AVAILABILITY"
 )
 
 var (
+	//AvailableGranularities is a collection of all available Granularities
 	AvailableGranularities []string = []string{
 		GranularityOneMin,
 		GranularityFiveMin,
@@ -64,6 +73,7 @@ type Query struct {
 	Metric      string        `json:"metric,omitempty"`
 }
 
+//ToJSON is a utility function to marshel the Query into a JSON String
 func (query Query) ToJSON() ([]byte, error) {
 	return json.Marshal(query)
 }
@@ -88,6 +98,7 @@ type Filter struct {
 	Filters []Filter `json:"filters,omitempty"`
 }
 
+//NewClusterFilter is a utility func to create a Filter for a given cluster
 func NewClusterFilter(cluster string) Filter {
 	return Filter{
 		Field: MetricLabelCluster,
@@ -95,6 +106,8 @@ func NewClusterFilter(cluster string) Filter {
 		Value: cluster,
 	}
 }
+
+//NewTopicFilter is a utility func to create a Filter for a given topic
 func NewTopicFilter(topic string) Filter {
 	return Filter{
 		Field: MetricLabelTopic,
@@ -102,6 +115,8 @@ func NewTopicFilter(topic string) Filter {
 		Value: topic,
 	}
 }
+
+//NewTypeFilter is a utility func to create a Filter for a given type
 func NewTypeFilter(ty string) Filter {
 	return Filter{
 		Field: MetricLabelType,
@@ -110,6 +125,7 @@ func NewTypeFilter(ty string) Filter {
 	}
 }
 
+//NewFilterCollection is a utility func to create a Filter for a collection of Filters
 func NewFilterCollection(op string, filters ...Filter) FilterHeader {
 	return FilterHeader{
 		Op:      op,
@@ -117,10 +133,12 @@ func NewFilterCollection(op string, filters ...Filter) FilterHeader {
 	}
 }
 
+//NewTimeInterval is a utility func to create a Interval String for a given Time range
 func NewTimeInterval(startTime time.Time, endTime time.Time) string {
 	return fmt.Sprintf("%s/%s", startTime.Format(TimeFormatStr), endTime.Format(TimeFormatStr))
 }
 
+//NewMetricAgg is a utility func to create a Aggregation for a given metric
 func NewMetricAgg(metric string) Aggregation {
 	return Aggregation{
 		Agg:    AggSum,
