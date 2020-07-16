@@ -219,6 +219,21 @@ func (client MetricsClient) QueryMetric(cluster string, metric string, granulari
 	return response.Data, err
 }
 
+//QueryMetricAndType returns all the data points for a given metric and type, aggregated up to the given granularity, within the given window of time
+func (client MetricsClient) QueryMetricAndType(cluster string, metric string, tye string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
+	query := Query{
+		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster), NewTypeFilter(tye)),
+		Intervals:   []string{NewTimeInterval(startTime, endTime)},
+		Aggreations: []Aggregation{NewMetricAgg(metric)},
+		Granularity: granularity,
+		GroupBy:     []string{MetricLabelCluster, MetricLabelType},
+		Limit:       DefaultQueryLimit,
+	}
+
+	response, err := client.SendQuery(queryPath, query)
+	return response.Data, err
+}
+
 //QueryMetricAndTopic returns all the data points for a given metric and topic, aggregated up to the given granularity, within the given window of time
 func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, topic string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
 	query := Query{
@@ -348,7 +363,7 @@ func (client MetricsClient) SendGet(path string) ([]byte, error) {
 		log.WithFields(log.Fields{
 			"path":   path,
 			"result": string(res),
-		}).Trace("Recieved GET Response")
+		}).Trace("Received GET Response")
 	}
 	return res, err
 }
