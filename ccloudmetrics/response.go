@@ -15,6 +15,29 @@ type AvailableMetric struct {
 	Labels         []AvailableMetricLabel `json:"labels,omitempty" cjson:"labels,omitempty"`
 }
 
+//HasLabel checks if a given AvailableMetric has a given label
+func (m AvailableMetric) HasLabel(label string) bool {
+	if m.Labels != nil {
+		for _, l := range m.Labels {
+			if l.Name == label {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+//GetValidLabels given a whitelist of possible labels will return a collection of labels that are valid to use against this metric
+func (m AvailableMetric) GetValidLabels(whitelist []string) []string {
+	labels := []string{}
+	for _, l := range whitelist {
+		if m.HasLabel(l) {
+			labels = append(labels, l)
+		}
+	}
+	return labels
+}
+
 //AvailableMetricResponse is a struct to house the full response from a GetAvailableMetrics() or GetCurrentlyAvailableMetrics() call
 type AvailableMetricResponse struct {
 	AvailableMetrics []AvailableMetric `json:"data" cjson:"data"`

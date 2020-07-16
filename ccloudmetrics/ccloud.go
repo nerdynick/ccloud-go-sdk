@@ -219,6 +219,21 @@ func (client MetricsClient) QueryMetric(cluster string, metric string, granulari
 	return response.Data, err
 }
 
+//QueryMetricWithAggs returns all the data points for a given metric, aggregated up to the given granularity, within the given window of time, and grouped by the given labels
+func (client MetricsClient) QueryMetricWithAggs(cluster string, metric AvailableMetric, granularity string, startTime time.Time, endTime time.Time, whitelistedLabels []string) ([]QueryData, error) {
+	query := Query{
+		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
+		Intervals:   []string{NewTimeInterval(startTime, endTime)},
+		Aggreations: []Aggregation{NewMetricAgg(metric.Name)},
+		Granularity: granularity,
+		GroupBy:     metric.GetValidLabels(whitelistedLabels),
+		Limit:       DefaultQueryLimit,
+	}
+
+	response, err := client.SendQuery(queryPath, query)
+	return response.Data, err
+}
+
 //QueryMetricAndType returns all the data points for a given metric and type, aggregated up to the given granularity, within the given window of time
 func (client MetricsClient) QueryMetricAndType(cluster string, metric string, tye string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
 	query := Query{
