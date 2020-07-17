@@ -72,6 +72,38 @@ type QueryData struct {
 	Partition string  `json:"metric.label.partition,omitempty"`
 }
 
+//HasCluster checks to see if a Cluster Agg was preformed
+func (q QueryData) HasCluster() bool {
+	if q.Cluster != "" {
+		return true
+	}
+	return false
+}
+
+//HasTopic checks to see if a Topic Agg was preformed
+func (q QueryData) HasTopic() bool {
+	if q.Topic != "" {
+		return true
+	}
+	return false
+}
+
+//HasType checks to see if a Type Agg was preformed
+func (q QueryData) HasType() bool {
+	if q.Type != "" {
+		return true
+	}
+	return false
+}
+
+//HasPartition checks to see if a Partition Agg was preformed
+func (q QueryData) HasPartition() bool {
+	if q.Partition != "" {
+		return true
+	}
+	return false
+}
+
 //QueryResponse is a struct that represents a given query result
 type QueryResponse struct {
 	Data []QueryData `json:"data"`
