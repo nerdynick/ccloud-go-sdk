@@ -70,3 +70,14 @@ type QueryResponse struct {
 	Data []QueryData `json:"data"`
 	Meta Meta        `json:"meta,omitempty"`
 }
+
+//ErrorResponse when a none 200 HTTP Status is returned. This handles the JSON
+type ErrorResponse struct {
+	Errors []Error `json:"errors"`
+}
+
+//Error a given error
+type Error struct {
+	Status string `json:"status"`
+	Detail string `json:"detail"`
+}

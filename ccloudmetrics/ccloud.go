@@ -541,22 +541,28 @@ func (client MetricsClient) sendReq(method string, path string, body []byte) ([]
 		return nil, err
 	}
 
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":         err.Error(),
+			"statusCode":    res.StatusCode,
+			"statusMessage": res.Status,
+		}).Error("Error returned from HTTP Request")
+		return nil, err
+	}
+
 	if res.StatusCode != 200 {
+		response := ErrorResponse{}
+		json.Unmarshal(resBody, &response)
+
 		errorMsg := fmt.Sprintf("Received status code %d instead of 200 for %s on %s", res.StatusCode, method, endpoint)
 		log.WithFields(log.Fields{
 			"statusCode":    res.StatusCode,
 			"statusMessage": res.Status,
-			"body":          string(body),
+			"reqBody":       string(body),
+			"errorResponse": response,
 		}).Error(errorMsg)
 		return nil, errors.New(errorMsg)
-	}
-
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("Error returned from HTTP Request")
-		return nil, err
 	}
 
 	if log.IsLevelEnabled(log.TraceLevel) {
