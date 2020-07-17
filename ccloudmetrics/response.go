@@ -1,6 +1,7 @@
 package ccloudmetrics
 
 import (
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,6 +13,11 @@ type ExtendedMetricLabel struct {
 	Desc string `json:"description" json:"description"`
 }
 
+//MetricLabel Transform ExtendedMetricLabel into MetricLabel
+func (e ExtendedMetricLabel) MetricLabel() MetricLabel {
+	return NewMetricLabel(e.Name)
+}
+
 //Metric is a struct to house the Metric details for a returned metric
 type Metric struct {
 	Name           string                `json:"name" cjson:"name"`
@@ -19,6 +25,11 @@ type Metric struct {
 	Type           string                `json:"type,omitempty" cjson:"type,omitempty"`
 	LifecycleStage string                `json:"lifecycle_stage,omitempty" cjson:"lifecycle_stage,omitempty"`
 	Labels         []ExtendedMetricLabel `json:"labels,omitempty" cjson:"labels,omitempty"`
+}
+
+//ShortName returned a simple shorter name, without all the namespacing
+func (m Metric) ShortName() string {
+	return strings.TrimPrefix("io.confluent.kafka.server/", m.Name)
 }
 
 //HasLabel checks if a given AvailableMetric has a given label
