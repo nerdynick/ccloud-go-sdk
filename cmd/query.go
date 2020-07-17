@@ -23,16 +23,7 @@ type Query struct {
 }
 
 func (q *Query) req(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient) error {
-	sTime, err := time.Parse(ccloudmetrics.TimeFormatStr, startTime)
-	if err != nil {
-		return nil
-	}
-	eTime, err := time.Parse(ccloudmetrics.TimeFormatStr, endTime)
-	if err != nil {
-		return nil
-	}
-
-	res, err := q.request(cmd, args, client, sTime, eTime)
+	res, err := q.request(cmd, args, client, context.getStartTime(), context.getEndTime())
 	q.Results = res
 	return err
 }
@@ -73,27 +64,15 @@ func (q Query) outputCSV(writer *csv.Writer) error {
 	return nil
 }
 
-var (
-	granularity string
-	lastXmin    int
-)
-
 func init() {
-	cobra.OnInitialize(queryOnInit)
-	queryCmd.PersistentFlags().StringVarP(&cluster, "cluster", "c", "", "Confluent Cloud Cluster ID")
+	queryCmd.PersistentFlags().StringVarP(&context.Cluster, "cluster", "c", "", "Confluent Cloud Cluster ID")
 	queryCmd.MarkPersistentFlagRequired("cluster")
 
-	queryCmd.PersistentFlags().StringVar(&startTime, "start", time.Now().Add(time.Duration(-1)*time.Hour).Format(ccloudmetrics.TimeFormatStr), "Start Time in the format of "+ccloudmetrics.TimeFormatStr)
-	queryCmd.PersistentFlags().StringVar(&endTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)
-	queryCmd.PersistentFlags().IntVar(&lastXmin, "last", 0, "Instead of using start/end time. Query for the last X mins")
+	queryCmd.PersistentFlags().StringVar(&context.StartTime, "start", time.Now().Add(time.Duration(-1)*time.Hour).Format(ccloudmetrics.TimeFormatStr), "Start Time in the format of "+ccloudmetrics.TimeFormatStr)
+	queryCmd.PersistentFlags().StringVar(&context.EndTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)
+	queryCmd.PersistentFlags().IntVar(&context.LastXmin, "last", 0, "Instead of using start/end time. Query for the last X mins")
 
-	queryCmd.PersistentFlags().StringVar(&granularity, "gran", string(ccloudmetrics.GranularityOneHour), "Granularity of Metrics. Options are: "+strings.Join(ccloudmetrics.AvailableGranularities, ", "))
+	queryCmd.PersistentFlags().StringVar(&context.Granularity, "gran", string(ccloudmetrics.GranularityOneHour), "Granularity of Metrics. Options are: "+strings.Join(ccloudmetrics.AvailableGranularities, ", "))
 
 	rootCmd.AddCommand(queryCmd)
-}
-
-func queryOnInit() {
-	if lastXmin > 0 {
-		startTime = time.Now().Add(time.Duration(-lastXmin) * time.Minute).Format(ccloudmetrics.TimeFormatStr)
-	}
 }

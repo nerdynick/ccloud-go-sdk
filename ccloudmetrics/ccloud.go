@@ -97,10 +97,10 @@ func NewClientFromContext(context APIContext, httpContext HTTPContext) MetricsCl
 
 	httpClient := http.Client{
 		Timeout: time.Second * time.Duration(httpContext.RequestTimeout),
-		// Transport: &http.Transport{
-		// 	MaxIdleConns:        httpContext.MaxIdleConns,
-		// 	MaxIdleConnsPerHost: httpContext.MaxIdleConnsPerHost,
-		// },
+		Transport: &http.Transport{
+			MaxIdleConns:        httpContext.MaxIdleConns,
+			MaxIdleConnsPerHost: httpContext.MaxIdleConnsPerHost,
+		},
 	}
 	client := MetricsClient{
 		httpClient:  httpClient,
@@ -153,7 +153,7 @@ func intOrDefault(val int, def int) int {
 }
 
 //GetAvailableMetrics returns a collection of all the available metrics and their supported labels among other important meta data
-func (client MetricsClient) GetAvailableMetrics() ([]AvailableMetric, error) {
+func (client MetricsClient) GetAvailableMetrics() ([]Metric, error) {
 	result, err := client.SendGet(descriptorPath)
 
 	if err != nil {
@@ -166,8 +166,8 @@ func (client MetricsClient) GetAvailableMetrics() ([]AvailableMetric, error) {
 	return response.AvailableMetrics, nil
 }
 
-//GetCurrentlyAvailableMetrics returns all the currently available metrics and their supported labels among other important meta data
-func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]AvailableMetric, error) {
+//GetCurrentlyMetrics returns all the currently available metrics and their supported labels among other important meta data
+func (client MetricsClient) GetCurrentlyMetrics(cluster string) ([]Metric, error) {
 	query := Query{
 		Filter: NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
 	}
@@ -184,12 +184,12 @@ func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]Avai
 }
 
 //GetTopicsForMetric returns all the available topics for a given metric within a window of time
-func (client MetricsClient) GetTopicsForMetric(cluster string, metric string, startTime time.Time, endTime time.Time) ([]string, error) {
+func (client MetricsClient) GetTopicsForMetric(cluster string, metric Metric, startTime time.Time, endTime time.Time) ([]string, error) {
 	query := Query{
 		Filter:    NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
-		GroupBy:   []string{MetricLabelTopic.GetFullName()},
+		GroupBy:   metric.GetValidLabels([]MetricLabel{MetricLabelTopic}),
 		Intervals: []string{NewTimeInterval(startTime, endTime)},
-		Metric:    metric,
+		Metric:    metric.Name,
 	}
 	response, err := client.SendQuery(attributesPath, query)
 	if err != nil {
@@ -205,13 +205,13 @@ func (client MetricsClient) GetTopicsForMetric(cluster string, metric string, st
 }
 
 //QueryMetric returns all the data points for a given metric, aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetric(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
+func (client MetricsClient) QueryMetric(cluster string, metric Metric, granularity Granularity, startTime time.Time, endTime time.Time) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
-		Aggreations: []Aggregation{NewMetricAgg(metric)},
-		Granularity: granularity,
-		GroupBy:     []string{MetricLabelCluster.GetFullName()},
+		Aggreations: []Aggregation{NewMetricAgg(metric.Name)},
+		Granularity: granularity.String(),
+		GroupBy:     metric.GetValidLabels([]MetricLabel{MetricLabelCluster}),
 		Limit:       DefaultQueryLimit,
 	}
 
@@ -219,13 +219,83 @@ func (client MetricsClient) QueryMetric(cluster string, metric string, granulari
 	return response.Data, err
 }
 
+//QueryMetrics returns all the data points for a given metrics, aggregated up to the given granularity, within the given window of time
+func (client MetricsClient) QueryMetrics(cluster string, metric []Metric, granularity Granularity, startTime time.Time, endTime time.Time) ([]QueryData, error) {
+	metricsChan := make(chan Metric, len(metric))
+	resultsChan := make(chan []QueryData, len(metric))
+	errorsChan := make(chan error, len(metric))
+	waitGroup := sync.WaitGroup{}
+
+	log.Debug("Starting up routines")
+	for id := 0; id < client.apiContext.MaxWorkers; id++ {
+		go client.queryMetricWorker(cluster, granularity, startTime, endTime, id, &waitGroup, metricsChan, resultsChan, errorsChan)
+	}
+
+	log.Debug("Sending Topics")
+	for _, metric := range metric {
+		log.Debug("Sending Topic: " + metric.Name)
+		metricsChan <- metric
+		waitGroup.Add(1)
+	}
+	log.Debug("Done Sending Metrics. Closing Channel")
+	close(metricsChan)
+
+	waitGroup.Wait()
+	close(resultsChan)
+	close(errorsChan)
+
+	log.Debug("Processing Errors")
+	finalErrors := []string{}
+	for err := range errorsChan {
+		finalErrors = append(finalErrors, err.Error())
+	}
+	if len(finalErrors) > 0 {
+		err := errors.New(strings.Join(finalErrors, "\n\n"))
+		log.Error("Got Error" + err.Error())
+		return nil, err
+	}
+
+	log.Debug("Processing Results")
+	queryData := []QueryData{}
+	for res := range resultsChan {
+		queryData = append(queryData, res...)
+	}
+
+	return queryData, nil
+}
+
+func (client MetricsClient) queryMetricWorker(cluster string, granularity Granularity, startTime time.Time, endTime time.Time, workerID int, wg *sync.WaitGroup, metrics <-chan Metric, results chan<- []QueryData, errs chan<- error) {
+	for metric := range metrics {
+		log.WithFields(log.Fields{
+			"metric": metric.Name,
+			"worker": workerID,
+		}).Debug("Handling Topic")
+
+		res, err := client.QueryMetric(cluster, metric, granularity, startTime, endTime)
+		if err != nil {
+			errs <- err
+		} else {
+			results <- res
+		}
+		wg.Done()
+
+		log.WithFields(log.Fields{
+			"metric": metric.Name,
+			"worker": workerID,
+		}).Debug("Handled Topic")
+	}
+	log.WithFields(log.Fields{
+		"worker": workerID,
+	}).Debug("Worker Done")
+}
+
 //QueryMetricWithAggs returns all the data points for a given metric, aggregated up to the given granularity, within the given window of time, and grouped by the given labels
-func (client MetricsClient) QueryMetricWithAggs(cluster string, metric AvailableMetric, granularity string, startTime time.Time, endTime time.Time, whitelistedLabels []string) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricWithAggs(cluster string, metric Metric, granularity Granularity, startTime time.Time, endTime time.Time, whitelistedLabels []MetricLabel) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
 		Aggreations: []Aggregation{NewMetricAgg(metric.Name)},
-		Granularity: granularity,
+		Granularity: granularity.String(),
 		GroupBy:     metric.GetValidLabels(whitelistedLabels),
 		Limit:       DefaultQueryLimit,
 	}
@@ -235,13 +305,13 @@ func (client MetricsClient) QueryMetricWithAggs(cluster string, metric Available
 }
 
 //QueryMetricAndType returns all the data points for a given metric and type, aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetricAndType(cluster string, metric string, tye string, granularity string, startTime time.Time, endTime time.Time) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricAndType(cluster string, metric Metric, tye string, granularity Granularity, startTime time.Time, endTime time.Time) ([]QueryData, error) {
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster), NewTypeFilter(tye)),
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
-		Aggreations: []Aggregation{NewMetricAgg(metric)},
-		Granularity: granularity,
-		GroupBy:     []string{MetricLabelCluster.GetFullName(), MetricLabelType.GetFullName()},
+		Aggreations: []Aggregation{NewMetricAgg(metric.Name)},
+		Granularity: granularity.String(),
+		GroupBy:     metric.GetValidLabels([]MetricLabel{MetricLabelCluster, MetricLabelType}),
 		Limit:       DefaultQueryLimit,
 	}
 
@@ -250,18 +320,22 @@ func (client MetricsClient) QueryMetricAndType(cluster string, metric string, ty
 }
 
 //QueryMetricAndTopic returns all the data points for a given metric and topic, aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, topic string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricAndTopic(cluster string, metric Metric, topic string, granularity Granularity, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+	if topic == "*" || strings.ToLower(topic) == "all" {
+		return client.QueryMetricForAllTopics(cluster, metric, granularity, startTime, endTime, includePartitions, nil)
+	}
+
+	labels := []MetricLabel{MetricLabelCluster, MetricLabelTopic}
+	if includePartitions {
+		labels = append(labels, MetricLabelPartition)
+	}
 	query := Query{
 		Filter:      NewFilterCollection(OpAnd, NewClusterFilter(cluster), NewTopicFilter(topic)),
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
-		Aggreations: []Aggregation{NewMetricAgg(metric)},
-		Granularity: granularity,
-		GroupBy:     []string{MetricLabelCluster.GetFullName(), MetricLabelTopic.GetFullName()},
+		Aggreations: []Aggregation{NewMetricAgg(metric.Name)},
+		Granularity: granularity.String(),
+		GroupBy:     metric.GetValidLabels(labels),
 		Limit:       DefaultQueryLimit,
-	}
-
-	if includePartitions {
-		query.GroupBy = append(query.GroupBy, MetricLabelPartition.GetFullName())
 	}
 
 	response, err := client.SendQuery(queryPath, query)
@@ -269,7 +343,7 @@ func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, t
 }
 
 //QueryMetricAndTopicWorker returns all the data points, fetched in parallel, for a given metric and topics, aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, workerID int, wg *sync.WaitGroup, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
+func (client MetricsClient) queryMetricAndTopicWorker(cluster string, metric Metric, granularity Granularity, startTime time.Time, endTime time.Time, includePartitions bool, workerID int, wg *sync.WaitGroup, topics <-chan string, results chan<- []QueryData, errs chan<- error) {
 	for topic := range topics {
 		log.WithFields(log.Fields{
 			"topic":  topic,
@@ -295,7 +369,17 @@ func (client MetricsClient) QueryMetricAndTopicWorker(cluster string, metric str
 }
 
 //QueryMetricAndTopics returns all the data points, fetched in parallel, for a given metric and topics, aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetricAndTopics(cluster, metric string, topics []string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricAndTopics(cluster string, metric Metric, topics []string, granularity Granularity, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+	hasAll := false
+	for _, t := range topics {
+		if t == "*" || strings.ToLower(t) == "all" {
+			hasAll = true
+			break
+		}
+	}
+	if hasAll {
+		return client.QueryMetricForAllTopics(cluster, metric, granularity, startTime, endTime, includePartitions, nil)
+	}
 	topicChan := make(chan string, len(topics))
 	resultsChan := make(chan []QueryData, len(topics))
 	errorsChan := make(chan error, len(topics))
@@ -303,7 +387,7 @@ func (client MetricsClient) QueryMetricAndTopics(cluster, metric string, topics 
 
 	log.Debug("Starting up routines")
 	for id := 0; id < client.apiContext.MaxWorkers; id++ {
-		go client.QueryMetricAndTopicWorker(cluster, metric, granularity, startTime, endTime, includePartitions, id, &waitGroup, topicChan, resultsChan, errorsChan)
+		go client.queryMetricAndTopicWorker(cluster, metric, granularity, startTime, endTime, includePartitions, id, &waitGroup, topicChan, resultsChan, errorsChan)
 	}
 
 	log.Debug("Sending Topics")
@@ -340,7 +424,7 @@ func (client MetricsClient) QueryMetricAndTopics(cluster, metric string, topics 
 }
 
 //QueryMetricForAllTopics returns all the data points, fetched in parallel, for a given metric and all available topics (As returned by GetTopicsForMetric), aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetricForAllTopics(cluster, metric string, granularity string, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricForAllTopics(cluster string, metric Metric, granularity Granularity, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
 	topics, err := client.GetTopicsForMetric(cluster, metric, startTime, endTime)
 	if err != nil {
 		return nil, err
@@ -350,9 +434,11 @@ func (client MetricsClient) QueryMetricForAllTopics(cluster, metric string, gran
 
 OUTER:
 	for _, t := range topics {
-		for _, bt := range blacklistedTopics {
-			if t == bt {
-				continue OUTER
+		if blacklistedTopics != nil {
+			for _, bt := range blacklistedTopics {
+				if t == bt {
+					continue OUTER
+				}
 			}
 		}
 		finalTopics = append(finalTopics, t)

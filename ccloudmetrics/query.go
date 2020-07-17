@@ -52,10 +52,10 @@ const (
 var (
 	//AvailableMetricLabels is a collection of all the available MetricLabels
 	AvailableMetricLabels []string = []string{
-		MetricLabelCluster.GetFullName(),
-		MetricLabelTopic.GetFullName(),
-		MetricLabelType.GetFullName(),
-		MetricLabelPartition.GetFullName(),
+		MetricLabelCluster.String(),
+		MetricLabelTopic.String(),
+		MetricLabelType.String(),
+		MetricLabelPartition.String(),
 	}
 	//AvailableGranularities is a collection of all available Granularities
 	AvailableGranularities []string = []string{
@@ -71,29 +71,38 @@ var (
 //MetricLabel string type to extend extra helper functions
 type MetricLabel string
 
-//GetFullName returns the full name for a given label
-func (m MetricLabel) GetFullName() string {
-	return string(m)
-}
-
-//GetSimpleName returns a simple name for a given label
-func (m MetricLabel) GetSimpleName() string {
-	return strings.TrimSuffix(m.GetFullName(), "metric.label.")
-}
-
 //IsValid checks in the current label is a valid, available, and known label
 func (m MetricLabel) IsValid() bool {
 	for _, l := range AvailableMetricLabels {
-		if MetricLabel(l) == m {
+		if m.Equals(l) {
 			return true
 		}
 	}
 	return false
 }
 
-//MetricLabelFromName find a label for a given full name or simple name string
-func MetricLabelFromName(name string) MetricLabel {
-	if strings.HasPrefix(name, "metric.label") {
+//Equals tests if the MetricLabel is equal to a string representation
+func (m MetricLabel) Equals(str string) bool {
+	if m == NewMetricLabel(str) {
+		return true
+	}
+	return false
+}
+
+func (m MetricLabel) String() string {
+	return string(m)
+}
+
+//ExtendedMetricLabel transforms MetricLabel into an ExtendedMetricLabel
+func (m MetricLabel) ExtendedMetricLabel() ExtendedMetricLabel {
+	return ExtendedMetricLabel{
+		Name: m.String(),
+	}
+}
+
+//NewMetricLabel creats a new MetricLabel from a string value
+func NewMetricLabel(name string) MetricLabel {
+	if strings.HasPrefix(name, "metric.label.") {
 		return MetricLabel(name)
 	}
 	return MetricLabel("metric.label." + name)
@@ -102,12 +111,24 @@ func MetricLabelFromName(name string) MetricLabel {
 //Granularity string type to extend extra helper functions
 type Granularity string
 
+func (g Granularity) String() string {
+	return string(g)
+}
+
 //IsValid checks in the current Granularity is a valid, available, and known Granularity
 func (g Granularity) IsValid() bool {
 	for _, l := range AvailableGranularities {
-		if Granularity(l) == g {
+		if g.Equals(l) {
 			return true
 		}
+	}
+	return false
+}
+
+//Equals tests if the Granularity is equal to a string representation
+func (g Granularity) Equals(str string) bool {
+	if string(g) == str {
+		return true
 	}
 	return false
 }
@@ -170,7 +191,7 @@ type Filter struct {
 //NewClusterFilter is a utility func to create a Filter for a given cluster
 func NewClusterFilter(cluster string) Filter {
 	return Filter{
-		Field: MetricLabelCluster.GetFullName(),
+		Field: MetricLabelCluster.String(),
 		Op:    OpEq,
 		Value: cluster,
 	}
@@ -179,7 +200,7 @@ func NewClusterFilter(cluster string) Filter {
 //NewTopicFilter is a utility func to create a Filter for a given topic
 func NewTopicFilter(topic string) Filter {
 	return Filter{
-		Field: MetricLabelTopic.GetFullName(),
+		Field: MetricLabelTopic.String(),
 		Op:    OpEq,
 		Value: topic,
 	}
@@ -188,7 +209,7 @@ func NewTopicFilter(topic string) Filter {
 //NewTypeFilter is a utility func to create a Filter for a given type
 func NewTypeFilter(ty string) Filter {
 	return Filter{
-		Field: MetricLabelType.GetFullName(),
+		Field: MetricLabelType.String(),
 		Op:    OpEq,
 		Value: ty,
 	}

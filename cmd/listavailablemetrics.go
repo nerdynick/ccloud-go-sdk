@@ -11,16 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	availableMetrics = &cobra.Command{
-		Use:   "metrics",
-		Short: "List currently available metrics",
-		RunE:  runE(&AvailableMetrics{}),
-	}
-)
+var availableMetrics = &cobra.Command{
+	Use:   "metrics",
+	Short: "List currently available metrics",
+	RunE:  runE(&AvailableMetrics{}),
+}
 
 type AvailableMetrics struct {
-	Results []ccloudmetrics.AvailableMetric
+	Results []ccloudmetrics.Metric
 }
 
 func (am *AvailableMetrics) req(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient) error {

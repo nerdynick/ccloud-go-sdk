@@ -1,25 +1,25 @@
 package ccloudmetrics
 
-//AvailableMetricLabel is a struct to house the Label details for a return metric
-type AvailableMetricLabel struct {
+//ExtendedMetricLabel is a struct to house the Label details for a return metric
+type ExtendedMetricLabel struct {
 	Name string `json:"key" json:"key"`
 	Desc string `json:"description" json:"description"`
 }
 
-//AvailableMetric is a struct to house the Metric details for a returned metric
-type AvailableMetric struct {
-	Name           string                 `json:"name" cjson:"name"`
-	Desc           string                 `json:"description,omitempty" cjson:"description,omitempty"`
-	Type           string                 `json:"type,omitempty" cjson:"type,omitempty"`
-	LifecycleStage string                 `json:"lifecycle_stage,omitempty" cjson:"lifecycle_stage,omitempty"`
-	Labels         []AvailableMetricLabel `json:"labels,omitempty" cjson:"labels,omitempty"`
+//Metric is a struct to house the Metric details for a returned metric
+type Metric struct {
+	Name           string                `json:"name" cjson:"name"`
+	Desc           string                `json:"description,omitempty" cjson:"description,omitempty"`
+	Type           string                `json:"type,omitempty" cjson:"type,omitempty"`
+	LifecycleStage string                `json:"lifecycle_stage,omitempty" cjson:"lifecycle_stage,omitempty"`
+	Labels         []ExtendedMetricLabel `json:"labels,omitempty" cjson:"labels,omitempty"`
 }
 
 //HasLabel checks if a given AvailableMetric has a given label
-func (m AvailableMetric) HasLabel(label string) bool {
+func (m Metric) HasLabel(label MetricLabel) bool {
 	if m.Labels != nil {
 		for _, l := range m.Labels {
-			if l.Name == label {
+			if l.Name == label.String() {
 				return true
 			}
 		}
@@ -28,11 +28,11 @@ func (m AvailableMetric) HasLabel(label string) bool {
 }
 
 //GetValidLabels given a whitelist of possible labels will return a collection of labels that are valid to use against this metric
-func (m AvailableMetric) GetValidLabels(whitelist []string) []string {
+func (m Metric) GetValidLabels(whitelist []MetricLabel) []string {
 	labels := []string{}
 	for _, l := range whitelist {
 		if m.HasLabel(l) {
-			labels = append(labels, l)
+			labels = append(labels, l.String())
 		}
 	}
 	return labels
@@ -40,8 +40,8 @@ func (m AvailableMetric) GetValidLabels(whitelist []string) []string {
 
 //AvailableMetricResponse is a struct to house the full response from a GetAvailableMetrics() or GetCurrentlyAvailableMetrics() call
 type AvailableMetricResponse struct {
-	AvailableMetrics []AvailableMetric `json:"data" cjson:"data"`
-	Meta             Meta              `json:"meta,omitempty" cjson:"meta,omitempty"`
+	AvailableMetrics []Metric `json:"data" cjson:"data"`
+	Meta             Meta     `json:"meta,omitempty" cjson:"meta,omitempty"`
 }
 
 //MetaPagination is a struct to house the Pagination information for a given result

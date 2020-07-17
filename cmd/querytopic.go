@@ -12,7 +12,7 @@ var topicQueryCmd = &cobra.Command{
 	Short: "Query a topic for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, sTime time.Time, eTime time.Time) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricAndTopic(cluster, metric, topic, granularity, sTime, eTime, includePartitions)
+			return client.QueryMetricAndTopic(context.Cluster, context.getMetric(), context.Topic, context.getGranularity(), sTime, eTime, context.IncludePartitions)
 		},
 	}),
 }
@@ -22,7 +22,7 @@ var topicsQueryCmd = &cobra.Command{
 	Short: "Query a collection of topics for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, sTime time.Time, eTime time.Time) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricAndTopics(cluster, metric, topics, granularity, sTime, eTime, includePartitions)
+			return client.QueryMetricAndTopics(context.Cluster, context.getMetric(), context.Topics, context.getGranularity(), sTime, eTime, context.IncludePartitions)
 		},
 	}),
 }
@@ -32,34 +32,27 @@ var topicsAllQueryCmd = &cobra.Command{
 	Short: "Query all topics for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, sTime time.Time, eTime time.Time) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricForAllTopics(cluster, metric, granularity, sTime, eTime, includePartitions, blacklistedTopics)
+			return client.QueryMetricForAllTopics(context.Cluster, context.getMetric(), context.getGranularity(), sTime, eTime, context.IncludePartitions, context.BlacklistedTopics)
 		},
 	}),
 }
 
-var (
-	topic             string
-	topics            []string
-	blacklistedTopics []string
-	includePartitions bool
-)
-
 func init() {
-	topicQueryCmd.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicQueryCmd.Flags().StringVarP(&context.Metric, "metric", "m", "", "Metric to fetch available topics for")
 	topicQueryCmd.MarkFlagRequired("metric")
-	topicQueryCmd.Flags().StringVar(&topic, "topic", "", "Topic to query metric for")
+	topicQueryCmd.Flags().StringVar(&context.Topic, "topic", "", "Topic to query metric for")
 	topicQueryCmd.MarkFlagRequired("topic")
-	topicQueryCmd.Flags().BoolVar(&includePartitions, "partitions", false, "Should results be aggrigated to the parition or just to the topic")
+	topicQueryCmd.Flags().BoolVar(&context.IncludePartitions, "partitions", false, "Should results be aggrigated to the parition or just to the topic")
 	queryCmd.AddCommand(topicQueryCmd)
 
-	topicsAllQueryCmd.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicsAllQueryCmd.Flags().StringVarP(&context.Metric, "metric", "m", "", "Metric to fetch available topics for")
 	topicsAllQueryCmd.MarkFlagRequired("metric")
-	topicsAllQueryCmd.Flags().StringArrayVar(&blacklistedTopics, "blacklist", []string{}, "List of Topics to blacklist from getting fetch")
+	topicsAllQueryCmd.Flags().StringArrayVar(&context.BlacklistedTopics, "blacklist", []string{}, "List of Topics to blacklist from getting fetch")
 	topicsQueryCmd.AddCommand(topicsAllQueryCmd)
 
-	topicsQueryCmd.Flags().StringVarP(&metric, "metric", "m", "", "Metric to fetch available topics for")
+	topicsQueryCmd.Flags().StringVarP(&context.Metric, "metric", "m", "", "Metric to fetch available topics for")
 	topicsQueryCmd.MarkFlagRequired("metric")
-	topicsQueryCmd.Flags().StringArrayVar(&topics, "topics", []string{}, "List of Topics to query for")
+	topicsQueryCmd.Flags().StringArrayVar(&context.Topics, "topics", []string{}, "List of Topics to query for")
 	topicsQueryCmd.MarkFlagRequired("topics")
 	queryCmd.AddCommand(topicsQueryCmd)
 }
