@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -164,27 +163,10 @@ func runE(run runFunc) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		client := getClient()
 		err := run.req(cmd, args, client)
-
 		if err != nil {
-			return err
+			log.Panic(fmt.Sprintf("Failed to get full results. Error: %s", err.Error()))
 		}
-		if outputCSV {
-			writer := csv.NewWriter(os.Stdout)
-			err := run.outputCSV(writer)
-			if err != nil {
-				return err
-			}
-			writer.Flush()
-		}
-		if outputJSON {
-			encoder := json.NewEncoder(os.Stdout)
-			return run.outputJSON(encoder)
-
-		}
-		if !outputCSV && !outputJSON {
-			return run.outputPlain()
-		}
-		return nil
+		return err
 	}
 }
 

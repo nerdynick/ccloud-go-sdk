@@ -246,13 +246,14 @@ func (client MetricsClient) QueryMetrics(cluster string, metric []Metric, granul
 
 	log.Debug("Processing Errors")
 	finalErrors := []string{}
+	var err error
 	for err := range errorsChan {
 		finalErrors = append(finalErrors, err.Error())
 	}
 	if len(finalErrors) > 0 {
-		err := errors.New(strings.Join(finalErrors, "\n\n"))
-		log.Error("Got Error" + err.Error())
-		return nil, err
+		err = errors.New(strings.Join(finalErrors, "\n\n"))
+	} else {
+		err = nil
 	}
 
 	log.Debug("Processing Results")
@@ -261,7 +262,7 @@ func (client MetricsClient) QueryMetrics(cluster string, metric []Metric, granul
 		queryData = append(queryData, res...)
 	}
 
-	return queryData, nil
+	return queryData, err
 }
 
 func (client MetricsClient) queryMetricWorker(cluster string, granularity Granularity, startTime time.Time, endTime time.Time, workerID int, wg *sync.WaitGroup, metrics <-chan Metric, results chan<- []QueryData, errs chan<- error) {
@@ -404,14 +405,15 @@ func (client MetricsClient) QueryMetricAndTopics(cluster string, metric Metric, 
 	close(errorsChan)
 
 	log.Debug("Processing Errors")
+	var err error
 	finalErrors := []string{}
 	for err := range errorsChan {
 		finalErrors = append(finalErrors, err.Error())
 	}
 	if len(finalErrors) > 0 {
-		err := errors.New(strings.Join(finalErrors, "\n\n"))
-		log.Error("Got Error" + err.Error())
-		return nil, err
+		err = errors.New(strings.Join(finalErrors, "\n\n"))
+	} else {
+		err = nil
 	}
 
 	log.Debug("Processing Results")
@@ -420,7 +422,7 @@ func (client MetricsClient) QueryMetricAndTopics(cluster string, metric Metric, 
 		queryData = append(queryData, res...)
 	}
 
-	return queryData, nil
+	return queryData, err
 }
 
 //QueryMetricForAllTopics returns all the data points, fetched in parallel, for a given metric and all available topics (As returned by GetTopicsForMetric), aggregated up to the given granularity, within the given window of time

@@ -3,7 +3,9 @@ package cmd
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -25,7 +27,44 @@ type Query struct {
 func (q *Query) req(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient) error {
 	res, err := q.request(cmd, args, client, context.getStartTime(), context.getEndTime())
 	q.Results = res
-	return err
+	outputErrs := []error{}
+	if err != nil {
+		outputErrs = append(outputErrs, err)
+	}
+
+	if res != nil {
+		if outputCSV {
+			writer := csv.NewWriter(os.Stdout)
+			defer writer.Flush()
+			err := q.outputCSV(writer)
+			if err != nil {
+				outputErrs = append(outputErrs, err)
+			}
+
+		}
+		if outputJSON {
+			encoder := json.NewEncoder(os.Stdout)
+			err := q.outputJSON(encoder)
+			if err != nil {
+				outputErrs = append(outputErrs, err)
+			}
+		}
+		if !outputCSV && !outputJSON {
+			err := q.outputPlain()
+			if err != nil {
+				outputErrs = append(outputErrs, err)
+			}
+		}
+	}
+
+	finalErrors := []string{}
+	for _, err := range outputErrs {
+		finalErrors = append(finalErrors, err.Error())
+	}
+	if len(finalErrors) > 0 {
+		return errors.New(strings.Join(finalErrors, "\n\n"))
+	}
+	return nil
 }
 
 func (q *Query) outputPlain() error {

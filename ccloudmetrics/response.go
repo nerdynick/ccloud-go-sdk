@@ -1,5 +1,7 @@
 package ccloudmetrics
 
+import log "github.com/sirupsen/logrus"
+
 //ExtendedMetricLabel is a struct to house the Label details for a return metric
 type ExtendedMetricLabel struct {
 	Name string `json:"key" json:"key"`
@@ -19,7 +21,7 @@ type Metric struct {
 func (m Metric) HasLabel(label MetricLabel) bool {
 	if m.Labels != nil {
 		for _, l := range m.Labels {
-			if l.Name == label.String() {
+			if label.Equals(l.Name) {
 				return true
 			}
 		}
@@ -29,6 +31,11 @@ func (m Metric) HasLabel(label MetricLabel) bool {
 
 //GetValidLabels given a whitelist of possible labels will return a collection of labels that are valid to use against this metric
 func (m Metric) GetValidLabels(whitelist []MetricLabel) []string {
+	log.WithFields(log.Fields{
+		"AvailableLabels":   m.Labels,
+		"WhitelistedLabels": whitelist,
+	}).Debug("Getting Valid Labels")
+
 	labels := []string{}
 	for _, l := range whitelist {
 		if m.HasLabel(l) {
