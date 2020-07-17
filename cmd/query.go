@@ -87,7 +87,7 @@ func init() {
 	queryCmd.PersistentFlags().StringVar(&endTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)
 	queryCmd.PersistentFlags().IntVar(&lastXmin, "last", 0, "Instead of using start/end time. Query for the last X mins")
 
-	queryCmd.PersistentFlags().StringVar(&granularity, "gran", ccloudmetrics.GranularityOneHour, "Granularity of Metrics. Options are: "+strings.Join(ccloudmetrics.AvailableGranularities, ", "))
+	queryCmd.PersistentFlags().StringVar(&granularity, "gran", string(ccloudmetrics.GranularityOneHour), "Granularity of Metrics. Options are: "+strings.Join(ccloudmetrics.AvailableGranularities, ", "))
 
 	rootCmd.AddCommand(queryCmd)
 }

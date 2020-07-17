@@ -51,20 +51,20 @@ const (
 
 var (
 	//AvailableMetricLabels is a collection of all the available MetricLabels
-	AvailableMetricLabels []MetricLabel = []MetricLabel{
-		MetricLabelCluster,
-		MetricLabelTopic,
-		MetricLabelType,
-		MetricLabelPartition,
+	AvailableMetricLabels []string = []string{
+		MetricLabelCluster.GetFullName(),
+		MetricLabelTopic.GetFullName(),
+		MetricLabelType.GetFullName(),
+		MetricLabelPartition.GetFullName(),
 	}
 	//AvailableGranularities is a collection of all available Granularities
-	AvailableGranularities []Granularity = []Granularity{
-		GranularityOneMin,
-		GranularityFiveMin,
-		GranularityFifteenMin,
-		GranularityThirtyMin,
-		GranularityOneHour,
-		GranularityAll,
+	AvailableGranularities []string = []string{
+		string(GranularityOneMin),
+		string(GranularityFiveMin),
+		string(GranularityFifteenMin),
+		string(GranularityThirtyMin),
+		string(GranularityOneHour),
+		string(GranularityAll),
 	}
 )
 
@@ -84,7 +84,7 @@ func (m MetricLabel) GetSimpleName() string {
 //IsValid checks in the current label is a valid, available, and known label
 func (m MetricLabel) IsValid() bool {
 	for _, l := range AvailableMetricLabels {
-		if l == m {
+		if MetricLabel(l) == m {
 			return true
 		}
 	}
@@ -105,7 +105,7 @@ type Granularity string
 //IsValid checks in the current Granularity is a valid, available, and known Granularity
 func (g Granularity) IsValid() bool {
 	for _, l := range AvailableGranularities {
-		if l == g {
+		if Granularity(l) == g {
 			return true
 		}
 	}
