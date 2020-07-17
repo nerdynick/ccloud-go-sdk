@@ -113,7 +113,7 @@ func (g Granularity) IsValid() bool {
 }
 
 //GetStartTimeFromGranularity is a utility func to get a Start time given a granularity
-func (g Granularity) GetStartTimeFromGranularity(t time.Time, gran string) time.Time {
+func (g Granularity) GetStartTimeFromGranularity(t time.Time) time.Time {
 	switch g {
 	case GranularityOneMin:
 		return t.Add(time.Duration(-1) * time.Minute)
