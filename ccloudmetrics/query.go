@@ -3,6 +3,7 @@ package ccloudmetrics
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -21,26 +22,26 @@ const (
 	AggSum string = "SUM"
 
 	//MetricLabelCluster is a static def for the Cluster ID Label
-	MetricLabelCluster string = "metric.label.cluster_id"
+	MetricLabelCluster MetricLabel = "metric.label.cluster_id"
 	//MetricLabelTopic is a static def for the Topic Label
-	MetricLabelTopic string = "metric.label.topic"
+	MetricLabelTopic MetricLabel = "metric.label.topic"
 	//MetricLabelType is a static def for the Type Label
-	MetricLabelType string = "metric.label.type"
+	MetricLabelType MetricLabel = "metric.label.type"
 	//MetricLabelPartition is a static def for the Partition Label
-	MetricLabelPartition string = "metric.label.partition"
+	MetricLabelPartition MetricLabel = "metric.label.partition"
 
 	//GranularityOneMin is a static def for the 1 minute grantularity string
-	GranularityOneMin string = "PT1M"
+	GranularityOneMin Granularity = "PT1M"
 	//GranularityFiveMin is a static def for the 5 minute grantularity string
-	GranularityFiveMin string = "PT5M"
+	GranularityFiveMin Granularity = "PT5M"
 	//GranularityFifteenMin is a static def for the 15 minute grantularity string
-	GranularityFifteenMin string = "PT15M"
+	GranularityFifteenMin Granularity = "PT15M"
 	//GranularityThirtyMin is a static def for the 30 minute grantularity string
-	GranularityThirtyMin string = "PT30M"
+	GranularityThirtyMin Granularity = "PT30M"
 	//GranularityOneHour is a static def for the 1 hour grantularity string
-	GranularityOneHour string = "PT1H"
+	GranularityOneHour Granularity = "PT1H"
 	//GranularityAll is a static def for the ALL grantularity string
-	GranularityAll string = "ALL"
+	GranularityAll Granularity = "ALL"
 
 	//LifecycleStagePreview is a static def for referencing the PREVIEW Lifecycle Stage of a metric
 	LifecycleStagePreview string = "PREVIEW"
@@ -49,8 +50,15 @@ const (
 )
 
 var (
+	//AvailableMetricLabels is a collection of all the available MetricLabels
+	AvailableMetricLabels []MetricLabel = []MetricLabel{
+		MetricLabelCluster,
+		MetricLabelTopic,
+		MetricLabelType,
+		MetricLabelPartition,
+	}
 	//AvailableGranularities is a collection of all available Granularities
-	AvailableGranularities []string = []string{
+	AvailableGranularities []Granularity = []Granularity{
 		GranularityOneMin,
 		GranularityFiveMin,
 		GranularityFifteenMin,
@@ -59,6 +67,67 @@ var (
 		GranularityAll,
 	}
 )
+
+//MetricLabel string type to extend extra helper functions
+type MetricLabel string
+
+//GetFullName returns the full name for a given label
+func (m MetricLabel) GetFullName() string {
+	return string(m)
+}
+
+//GetSimpleName returns a simple name for a given label
+func (m MetricLabel) GetSimpleName() string {
+	return strings.TrimSuffix(m.GetFullName(), "metric.label.")
+}
+
+//IsValid checks in the current label is a valid, available, and known label
+func (m MetricLabel) IsValid() bool {
+	for _, l := range AvailableMetricLabels {
+		if l == m {
+			return true
+		}
+	}
+	return false
+}
+
+//MetricLabelFromName find a label for a given full name or simple name string
+func MetricLabelFromName(name string) MetricLabel {
+	if strings.HasPrefix(name, "metric.label") {
+		return MetricLabel(name)
+	}
+	return MetricLabel("metric.label." + name)
+}
+
+//Granularity string type to extend extra helper functions
+type Granularity string
+
+//IsValid checks in the current Granularity is a valid, available, and known Granularity
+func (g Granularity) IsValid() bool {
+	for _, l := range AvailableGranularities {
+		if l == g {
+			return true
+		}
+	}
+	return false
+}
+
+//GetStartTimeFromGranularity is a utility func to get a Start time given a granularity
+func (g Granularity) GetStartTimeFromGranularity(t time.Time, gran string) time.Time {
+	switch g {
+	case GranularityOneMin:
+		return t.Add(time.Duration(-1) * time.Minute)
+	case GranularityFiveMin:
+		return t.Add(time.Duration(-5) * time.Minute)
+	case GranularityFifteenMin:
+		return t.Add(time.Duration(-15) * time.Minute)
+	case GranularityThirtyMin:
+		return t.Add(time.Duration(-30) * time.Minute)
+	case GranularityOneHour:
+		return t.Add(time.Duration(-1) * time.Hour)
+	}
+	return time.Now()
+}
 
 // Query to Confluent Cloud API metric endpoint
 // This is the JSON structure for the endpoint
@@ -101,7 +170,7 @@ type Filter struct {
 //NewClusterFilter is a utility func to create a Filter for a given cluster
 func NewClusterFilter(cluster string) Filter {
 	return Filter{
-		Field: MetricLabelCluster,
+		Field: MetricLabelCluster.GetFullName(),
 		Op:    OpEq,
 		Value: cluster,
 	}
@@ -110,7 +179,7 @@ func NewClusterFilter(cluster string) Filter {
 //NewTopicFilter is a utility func to create a Filter for a given topic
 func NewTopicFilter(topic string) Filter {
 	return Filter{
-		Field: MetricLabelTopic,
+		Field: MetricLabelTopic.GetFullName(),
 		Op:    OpEq,
 		Value: topic,
 	}
@@ -119,7 +188,7 @@ func NewTopicFilter(topic string) Filter {
 //NewTypeFilter is a utility func to create a Filter for a given type
 func NewTypeFilter(ty string) Filter {
 	return Filter{
-		Field: MetricLabelType,
+		Field: MetricLabelType.GetFullName(),
 		Op:    OpEq,
 		Value: ty,
 	}

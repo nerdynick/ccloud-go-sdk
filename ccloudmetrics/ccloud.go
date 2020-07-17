@@ -187,7 +187,7 @@ func (client MetricsClient) GetCurrentlyAvailableMetrics(cluster string) ([]Avai
 func (client MetricsClient) GetTopicsForMetric(cluster string, metric string, startTime time.Time, endTime time.Time) ([]string, error) {
 	query := Query{
 		Filter:    NewFilterCollection(OpAnd, NewClusterFilter(cluster)),
-		GroupBy:   []string{MetricLabelTopic},
+		GroupBy:   []string{MetricLabelTopic.GetFullName()},
 		Intervals: []string{NewTimeInterval(startTime, endTime)},
 		Metric:    metric,
 	}
@@ -211,7 +211,7 @@ func (client MetricsClient) QueryMetric(cluster string, metric string, granulari
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
 		Aggreations: []Aggregation{NewMetricAgg(metric)},
 		Granularity: granularity,
-		GroupBy:     []string{MetricLabelCluster},
+		GroupBy:     []string{MetricLabelCluster.GetFullName()},
 		Limit:       DefaultQueryLimit,
 	}
 
@@ -241,7 +241,7 @@ func (client MetricsClient) QueryMetricAndType(cluster string, metric string, ty
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
 		Aggreations: []Aggregation{NewMetricAgg(metric)},
 		Granularity: granularity,
-		GroupBy:     []string{MetricLabelCluster, MetricLabelType},
+		GroupBy:     []string{MetricLabelCluster.GetFullName(), MetricLabelType.GetFullName()},
 		Limit:       DefaultQueryLimit,
 	}
 
@@ -256,12 +256,12 @@ func (client MetricsClient) QueryMetricAndTopic(cluster string, metric string, t
 		Intervals:   []string{NewTimeInterval(startTime, endTime)},
 		Aggreations: []Aggregation{NewMetricAgg(metric)},
 		Granularity: granularity,
-		GroupBy:     []string{MetricLabelCluster, MetricLabelTopic},
+		GroupBy:     []string{MetricLabelCluster.GetFullName(), MetricLabelTopic.GetFullName()},
 		Limit:       DefaultQueryLimit,
 	}
 
 	if includePartitions {
-		query.GroupBy = append(query.GroupBy, MetricLabelPartition)
+		query.GroupBy = append(query.GroupBy, MetricLabelPartition.GetFullName())
 	}
 
 	response, err := client.SendQuery(queryPath, query)
