@@ -22,7 +22,7 @@ var topicsQueryCmd = &cobra.Command{
 	Short: "Query a collection of topics for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, sTime time.Time, eTime time.Time) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricAndTopics(context.Cluster, context.getMetric(), context.Topics, context.getGranularity(), sTime, eTime, context.IncludePartitions)
+			return client.QueryMetricAndTopics(context.Cluster, context.getMetric(), context.Topics, context.getGranularity(), sTime, eTime, context.IncludePartitions, context.BlacklistedTopics)
 		},
 	}),
 }

@@ -370,7 +370,7 @@ func (client MetricsClient) queryMetricAndTopicWorker(cluster string, metric Met
 }
 
 //QueryMetricAndTopics returns all the data points, fetched in parallel, for a given metric and topics, aggregated up to the given granularity, within the given window of time
-func (client MetricsClient) QueryMetricAndTopics(cluster string, metric Metric, topics []string, granularity Granularity, startTime time.Time, endTime time.Time, includePartitions bool) ([]QueryData, error) {
+func (client MetricsClient) QueryMetricAndTopics(cluster string, metric Metric, topics []string, granularity Granularity, startTime time.Time, endTime time.Time, includePartitions bool, blacklistedTopics []string) ([]QueryData, error) {
 	hasAll := false
 	for _, t := range topics {
 		if t == "*" || strings.ToLower(t) == "all" {
@@ -379,7 +379,7 @@ func (client MetricsClient) QueryMetricAndTopics(cluster string, metric Metric, 
 		}
 	}
 	if hasAll {
-		return client.QueryMetricForAllTopics(cluster, metric, granularity, startTime, endTime, includePartitions, nil)
+		return client.QueryMetricForAllTopics(cluster, metric, granularity, startTime, endTime, includePartitions, blacklistedTopics)
 	}
 	topicChan := make(chan string, len(topics))
 	resultsChan := make(chan []QueryData, len(topics))
@@ -451,7 +451,7 @@ OUTER:
 		"metric": metric,
 	}).Debug("Getting Results for All topics")
 
-	return client.QueryMetricAndTopics(cluster, metric, finalTopics, granularity, startTime, endTime, includePartitions)
+	return client.QueryMetricAndTopics(cluster, metric, finalTopics, granularity, startTime, endTime, includePartitions, blacklistedTopics)
 }
 
 //SendGet send a HTTP GET request to the metrics API at the given path
