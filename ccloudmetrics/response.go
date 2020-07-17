@@ -1,6 +1,10 @@
 package ccloudmetrics
 
-import log "github.com/sirupsen/logrus"
+import (
+	"time"
+
+	log "github.com/sirupsen/logrus"
+)
 
 //ExtendedMetricLabel is a struct to house the Label details for a return metric
 type ExtendedMetricLabel struct {
@@ -70,6 +74,11 @@ type QueryData struct {
 	Cluster   string  `json:"metric.label.cluster_id,omitempty"`
 	Type      string  `json:"metric.label.type,omitempty"`
 	Partition string  `json:"metric.label.partition,omitempty"`
+}
+
+//Time returned the Timestamp parsed into time.Time
+func (q QueryData) Time() (time.Time, error) {
+	return time.Parse(TimeFormatStr, q.Timestamp)
 }
 
 //HasCluster checks to see if a Cluster Agg was preformed
