@@ -29,7 +29,7 @@ type Metric struct {
 
 //ShortName returned a simple shorter name, without all the namespacing
 func (m Metric) ShortName() string {
-	return strings.TrimPrefix("io.confluent.kafka.server/", m.Name)
+	return strings.TrimPrefix(m.Name, "io.confluent.kafka.server/")
 }
 
 //HasLabel checks if a given AvailableMetric has a given label
