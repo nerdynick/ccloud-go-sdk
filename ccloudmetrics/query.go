@@ -2,6 +2,7 @@ package ccloudmetrics
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -168,10 +169,32 @@ func (query Query) ToJSON() ([]byte, error) {
 	return json.Marshal(query)
 }
 
+func (q Query) Validate() error {
+	for _, a := range q.Aggreations {
+		err := a.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Aggregation for a Confluent Cloud API metric
 type Aggregation struct {
 	Agg    string `json:"agg"`
 	Metric string `json:"metric"`
+}
+
+func (a Aggregation) Validate() error {
+	if a.Agg == "" {
+		return errors.New("Agg can not be empty/nil")
+	}
+
+	if a.Metric == "" {
+		return errors.New("Metric can not be empty/nil")
+	}
+	return nil
 }
 
 // FilterHeader to use for a query

@@ -473,10 +473,16 @@ func (client MetricsClient) SendGet(path string) ([]byte, error) {
 
 //SendPost sends a HTTP POST request to the metrics API at the given path with the given Query as the post body
 func (client MetricsClient) SendPost(path string, query Query) ([]byte, error) {
+	err := query.Validate()
+	if err != nil {
+		return nil, err
+	}
+
 	jsonQuery, err := query.ToJSON()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
 	if log.IsLevelEnabled(log.TraceLevel) {
 		log.WithFields(log.Fields{
 			"path":  path,
