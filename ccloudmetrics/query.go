@@ -169,8 +169,8 @@ func (query Query) ToJSON() ([]byte, error) {
 	return json.Marshal(query)
 }
 
-func (q Query) Validate() error {
-	for _, a := range q.Aggreations {
+func (query Query) Validate() error {
+	for _, a := range query.Aggreations {
 		err := a.Validate()
 		if err != nil {
 			return err
