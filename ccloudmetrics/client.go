@@ -217,6 +217,11 @@ func (client MetricsClient) QueryMetric(cluster string, metric Metric, granulari
 
 	response, err := client.SendQuery(queryPath, query)
 	log.WithField("response", response).Debug("QueryMetric Response")
+	for i, r := range response.Data {
+		d := r
+		d.Metric = metric.Name
+		response.Data[i] = d
+	}
 	return response.Data, err
 }
 
@@ -303,6 +308,11 @@ func (client MetricsClient) QueryMetricWithAggs(cluster string, metric Metric, g
 	}
 
 	response, err := client.SendQuery(queryPath, query)
+	for i, r := range response.Data {
+		d := r
+		d.Metric = metric.Name
+		response.Data[i] = d
+	}
 	return response.Data, err
 }
 
@@ -318,6 +328,11 @@ func (client MetricsClient) QueryMetricAndType(cluster string, metric Metric, ty
 	}
 
 	response, err := client.SendQuery(queryPath, query)
+	for i, r := range response.Data {
+		d := r
+		d.Metric = metric.Name
+		response.Data[i] = d
+	}
 	return response.Data, err
 }
 
@@ -341,6 +356,11 @@ func (client MetricsClient) QueryMetricAndTopic(cluster string, metric Metric, t
 	}
 
 	response, err := client.SendQuery(queryPath, query)
+	for i, r := range response.Data {
+		d := r
+		d.Metric = metric.Name
+		response.Data[i] = d
+	}
 	return response.Data, err
 }
 

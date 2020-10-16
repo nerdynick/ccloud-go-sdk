@@ -37,6 +37,7 @@ func (q *Query) outputPlain() error {
 	}).Info("Printing Plain Output")
 
 	for _, result := range q.Results {
+		fmt.Printf("Metric:    %s\n", result.Metric)
 		fmt.Printf("Timestamp: %s\n", result.Timestamp)
 		fmt.Printf("Type:      %s\n", result.Type)
 		fmt.Printf("Cluster:   %s\n", result.Cluster)
@@ -53,6 +54,7 @@ func (q Query) outputJSON(encoder *json.Encoder) error {
 func (q Query) outputCSV(writer *csv.Writer) error {
 	for _, result := range q.Results {
 		err := writer.Write([]string{
+			result.Metric,
 			result.Timestamp,
 			result.Type,
 			result.Cluster,

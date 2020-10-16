@@ -29,6 +29,7 @@ type QueryData struct {
 	Cluster   string  `json:"metric.label.cluster_id,omitempty"`
 	Type      string  `json:"metric.label.type,omitempty"`
 	Partition string  `json:"metric.label.partition,omitempty"`
+	Metric    string  `json:"metric,omitempty"`
 }
 
 //Time returned the Timestamp parsed into time.Time
