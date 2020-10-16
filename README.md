@@ -94,23 +94,23 @@ Command Tree
 **List Available Topics for a given Metric**
 
 ```shell
-./confluent-cloud-metrics-go-sdk list topics --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID --metric io.confluent.kafka.server/retained_bytes
+./confluent-cloud-metrics-go-sdk list topics --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID  io.confluent.kafka.server/retained_bytes
 ```
 
 **Query Cluster level results for a given Metric**
 
 ```shell
-./confluent-cloud-metrics-go-sdk query metric --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID --metric io.confluent.kafka.server/retained_bytes
+./confluent-cloud-metrics-go-sdk query metric --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID  io.confluent.kafka.server/retained_bytes
 ```
 
 **Query Topic level results for a given Metric & Topic**
 
 ```shell
-./confluent-cloud-metrics-go-sdk query topic --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID --metric io.confluent.kafka.server/retained_bytes --topic MY-TOPIC
+./confluent-cloud-metrics-go-sdk query topic --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID --metric io.confluent.kafka.server/retained_bytes  MY-TOPIC
 ```
 
 **Query Topic Parition level results for a given Metric & Topic**
 
 ```shell
-./confluent-cloud-metrics-go-sdk query topic --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID --metric io.confluent.kafka.server/retained_bytes --topic MY-TOPIC --partitions
+./confluent-cloud-metrics-go-sdk query topic --apikey MY-KEY --apisecret MY-SECRET --cluster MY-CLUSTER-ID --metric io.confluent.kafka.server/retained_bytes MY-TOPIC --partitions
 ```
