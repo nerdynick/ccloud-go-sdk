@@ -31,6 +31,11 @@ type Metric struct {
 	Labels         []ExtendedMetricLabel `json:"labels,omitempty" cjson:"labels,omitempty"`
 }
 
+//Check is a given metric name is equal to this metric
+func (m Metric) Matches(name string) bool {
+	return m.Name == name || m.ShortName() == name
+}
+
 //ShortName returned a simple shorter name, without all the namespacing
 func (m Metric) ShortName() string {
 	return strings.TrimPrefix(m.Name, metricPrefix)

@@ -50,7 +50,7 @@ func (r *RequestContext) getMetric() ccloudmetrics.Metric {
 
 	for _, metric := range metrics {
 		metricNames = append(metricNames, metric.Name)
-		if metric.Name == r.Metric {
+		if metric.Matches(r.Metric) {
 			return metric
 		}
 	}
@@ -67,7 +67,7 @@ func (r *RequestContext) getMetrics() []ccloudmetrics.Metric {
 
 	for _, metric := range metrics {
 		for _, m := range r.Metrics {
-			if metric.Name == m {
+			if metric.Matches(m) {
 				validMetrics = append(validMetrics, metric)
 			}
 		}
