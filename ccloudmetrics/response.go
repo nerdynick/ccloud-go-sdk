@@ -1,64 +1,8 @@
 package ccloudmetrics
 
 import (
-	"strings"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
-
-//ExtendedMetricLabel is a struct to house the Label details for a return metric
-type ExtendedMetricLabel struct {
-	Name string `json:"key" json:"key"`
-	Desc string `json:"description" json:"description"`
-}
-
-//MetricLabel Transform ExtendedMetricLabel into MetricLabel
-func (e ExtendedMetricLabel) MetricLabel() MetricLabel {
-	return NewMetricLabel(e.Name)
-}
-
-//Metric is a struct to house the Metric details for a returned metric
-type Metric struct {
-	Name           string                `json:"name" cjson:"name"`
-	Desc           string                `json:"description,omitempty" cjson:"description,omitempty"`
-	Type           string                `json:"type,omitempty" cjson:"type,omitempty"`
-	LifecycleStage string                `json:"lifecycle_stage,omitempty" cjson:"lifecycle_stage,omitempty"`
-	Labels         []ExtendedMetricLabel `json:"labels,omitempty" cjson:"labels,omitempty"`
-}
-
-//ShortName returned a simple shorter name, without all the namespacing
-func (m Metric) ShortName() string {
-	return strings.TrimPrefix(m.Name, "io.confluent.kafka.server/")
-}
-
-//HasLabel checks if a given AvailableMetric has a given label
-func (m Metric) HasLabel(label MetricLabel) bool {
-	if m.Labels != nil {
-		for _, l := range m.Labels {
-			if label.Equals(l.Name) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-//GetValidLabels given a whitelist of possible labels will return a collection of labels that are valid to use against this metric
-func (m Metric) GetValidLabels(whitelist []MetricLabel) []string {
-	log.WithFields(log.Fields{
-		"AvailableLabels":   m.Labels,
-		"WhitelistedLabels": whitelist,
-	}).Debug("Getting Valid Labels")
-
-	labels := []string{}
-	for _, l := range whitelist {
-		if m.HasLabel(l) {
-			labels = append(labels, l.String())
-		}
-	}
-	return labels
-}
 
 //AvailableMetricResponse is a struct to house the full response from a GetAvailableMetrics() or GetCurrentlyAvailableMetrics() call
 type AvailableMetricResponse struct {

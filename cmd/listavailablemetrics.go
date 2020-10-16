@@ -11,17 +11,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var availableMetrics = &cobra.Command{
-	Use:   "metrics",
-	Short: "List currently available metrics",
-	RunE:  runE(&AvailableMetrics{}),
-}
+var (
+	availableMetrics = &cobra.Command{
+		Use:   "metrics",
+		Short: "List currently available metrics",
+		RunE:  runE(&AvailableMetrics{}),
+	}
+)
 
 type AvailableMetrics struct {
 	Results []ccloudmetrics.Metric
 }
 
-func (am *AvailableMetrics) req(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient) error {
+func (am *AvailableMetrics) req(cmd *cobra.Command, args []string, context RequestContext, client ccloudmetrics.MetricsClient) (bool, error) {
 	res, err := client.GetAvailableMetrics()
 	am.Results = res
 	log.WithFields(log.Fields{
@@ -29,7 +31,7 @@ func (am *AvailableMetrics) req(cmd *cobra.Command, args []string, client ccloud
 		"err":    err,
 	}).Info("Fetched Available Metrics")
 
-	return err
+	return (len(res) > 0), err
 }
 func (am AvailableMetrics) outputPlain() error {
 	log.WithFields(log.Fields{
