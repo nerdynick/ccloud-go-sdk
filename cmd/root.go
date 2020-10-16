@@ -56,14 +56,20 @@ func init() {
 		"HTTPContext": httpContext,
 	}).Trace("Initial Contexts")
 
+	apiKey := os.Getenv("API_KEY")
+	apiSecret := os.Getenv("API_SECRET")
+	apiSecretDefault := ""
+
+	if apiSecret != "" {
+		apiSecretDefault = "****"
+	}
+
 	//Root Commands
 	rootCmd.PersistentFlags().BoolVar(&verbose, "v", false, "Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&extraVerbose, "vv", false, "Extra Verbose output")
 	rootCmd.PersistentFlags().BoolVar(&extraExtraVerbose, "vvv", false, "Extra Extra Verbose output")
-	rootCmd.PersistentFlags().StringVarP(&apiContext.APIKey, "apikey", "k", "", "API Key")
-	rootCmd.MarkPersistentFlagRequired("apikey")
-	rootCmd.PersistentFlags().StringVarP(&apiContext.APISecret, "apisecret", "s", "", "API Secret")
-	rootCmd.MarkPersistentFlagRequired("apisecret")
+	rootCmd.PersistentFlags().StringVarP(&apiContext.APIKey, "apikey", "k", apiKey, "API Key - Optional ENV Var 'API_KEY'")
+	rootCmd.PersistentFlags().StringVarP(&apiContext.APISecret, "apisecret", "s", apiSecretDefault, "API Secret - Optional ENV Var 'API_SECRET'")
 	rootCmd.PersistentFlags().StringVarP(&strOutputFormat, "output", "o", strOutputFormat, "Output Format - Available Options: plain, csv, json")
 	rootCmd.PersistentFlags().StringVarP(&apiContext.BaseURL, "baseurl", "b", ccloudmetrics.DefaultBaseURL, "API Base Url")
 	rootCmd.PersistentFlags().IntVarP(&httpContext.RequestTimeout, "timeout", "t", ccloudmetrics.DefaultRequestTimeout, "HTTP Request Timeout")
@@ -72,6 +78,10 @@ func init() {
 
 func rootInit() {
 	requestcontext.OutputFormat = AvailableOutputFormats[strings.ToLower(strOutputFormat)]
+
+	if apiContext.APISecret == "****" {
+		apiContext.APISecret = os.Getenv("API_SECRET")
+	}
 
 	if verbose || extraVerbose || extraExtraVerbose {
 		log.SetLevel(log.InfoLevel)
@@ -153,4 +163,21 @@ func runE(run runFunc) func(*cobra.Command, []string) error {
 
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+func getMetrics(client ccloudmetrics.MetricsClient, metrics ...string) []ccloudmetrics.Metric {
+	availMetrics, err := client.GetAvailableMetrics()
+	if err != nil {
+		log.Panic(fmt.Sprintf("Failed to get all Available Metrics. Got error %s", err.Error()))
+	}
+	validMetrics := []ccloudmetrics.Metric{}
+
+	for _, metric := range availMetrics {
+		for _, m := range metrics {
+			if metric.Matches(m) {
+				validMetrics = append(validMetrics, metric)
+			}
+		}
+	}
+	return validMetrics
 }

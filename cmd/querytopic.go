@@ -10,7 +10,8 @@ var topicQueryCmd = &cobra.Command{
 	Short: "Query a topic for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, context RequestContext) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricAndTopic(context.Cluster, context.getMetric(), context.Topic, context.getGranularity(), context.getStartTime(), context.getEndTime(), context.IncludePartitions)
+			metrics := getMetrics(client, context.Metric)
+			return client.QueryMetricAndTopic(context.Cluster, metrics[0], context.Topic, context.getGranularity(), context.getStartTime(), context.getEndTime(), context.IncludePartitions)
 		},
 	}),
 }
@@ -20,7 +21,8 @@ var topicsQueryCmd = &cobra.Command{
 	Short: "Query a collection of topics for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, context RequestContext) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricAndTopics(context.Cluster, context.getMetric(), context.Topics, context.getGranularity(), context.getStartTime(), context.getEndTime(), context.IncludePartitions, context.BlacklistedTopics)
+			metrics := getMetrics(client, context.Metric)
+			return client.QueryMetricAndTopics(context.Cluster, metrics[0], context.Topics, context.getGranularity(), context.getStartTime(), context.getEndTime(), context.IncludePartitions, context.BlacklistedTopics)
 		},
 	}),
 }
@@ -30,7 +32,8 @@ var topicsAllQueryCmd = &cobra.Command{
 	Short: "Query all topics for a particular metric",
 	RunE: runE(&Query{
 		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, context RequestContext) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetricForAllTopics(context.Cluster, context.getMetric(), context.getGranularity(), context.getStartTime(), context.getEndTime(), context.IncludePartitions, context.BlacklistedTopics)
+			metrics := getMetrics(client, context.Metric)
+			return client.QueryMetricForAllTopics(context.Cluster, metrics[0], context.getGranularity(), context.getStartTime(), context.getEndTime(), context.IncludePartitions, context.BlacklistedTopics)
 		},
 	}),
 }

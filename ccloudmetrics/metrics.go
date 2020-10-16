@@ -20,6 +20,18 @@ var (
 	MetricRequests          = Metric{Name: "io.confluent.kafka.server/request_count"}
 	MetricPartition         = Metric{Name: "io.confluent.kafka.server/partition_count"}
 	MetricSuccessAuth       = Metric{Name: "io.confluent.kafka.server/successful_authentication_count"}
+
+	KnownMetrics = []Metric{
+		MetricReceivedBytes,
+		MetricSentBytes,
+		MetricReceivedRecords,
+		MetricSentRecords,
+		MetricRetainedBytes,
+		MetricActiveConnections,
+		MetricRequests,
+		MetricPartition,
+		MetricSuccessAuth,
+	}
 )
 
 //Metric is a struct to house the Metric details for a returned metric

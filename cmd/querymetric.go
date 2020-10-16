@@ -1,39 +1,38 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/ccloudmetrics"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-var ()
-
-var metricQueryCmd = &cobra.Command{
-	Use:   "metric",
-	Short: "Query results for a given metric",
-	RunE: runE(&Query{
-		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, context RequestContext) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetric(context.Cluster, context.getMetric(), context.getGranularity(), context.getStartTime(), context.getEndTime())
-		},
-	}),
-}
-
-var metricsQueryCmd = &cobra.Command{
-	Use:   "metrics",
-	Short: "Query results for a given metrics",
-	RunE: runE(&Query{
-		request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, context RequestContext) ([]ccloudmetrics.QueryData, error) {
-			return client.QueryMetrics(context.Cluster, context.getMetrics(), context.getGranularity(), context.getStartTime(), context.getEndTime())
-		},
-	}),
-}
-
 func init() {
-	metricQueryCmd.Flags().StringVarP(&requestcontext.Metric, "metric", "m", "", "Metric to fetch available topics for")
-	metricQueryCmd.MarkFlagRequired("metric")
-	queryCmd.AddCommand(metricQueryCmd)
+	validMetrics := []string{}
+	for _, m := range ccloudmetrics.KnownMetrics {
+		validMetrics = append(validMetrics, fmt.Sprintf("%-60v  -or-  %10v", m.Name, m.ShortName()))
+	}
 
-	metricsQueryCmd.Flags().StringArrayVarP(&requestcontext.Metrics, "metric", "m", []string{}, "Metric to fetch available topics for. Can be used multipule times to provide more multipule metrics")
-	metricsQueryCmd.MarkFlagRequired("metric")
-	queryCmd.AddCommand(metricsQueryCmd)
-
+	queryCmd.AddCommand(
+		&cobra.Command{
+			Use:     "metric",
+			Aliases: []string{"metrics"},
+			Short:   "Query results for a given metric. \nAvailable Known Metrics: \n\t" + strings.Join(validMetrics, "\n\t"),
+			Args:    cobra.MinimumNArgs(1),
+			RunE: runE(&Query{
+				request: func(cmd *cobra.Command, args []string, client ccloudmetrics.MetricsClient, context RequestContext) ([]ccloudmetrics.QueryData, error) {
+					metrics := getMetrics(client, args...)
+					log.WithField("metrics", metrics).Info("Metrics")
+					if len(metrics) > 1 {
+						return client.QueryMetrics(context.Cluster, metrics, context.getGranularity(), context.getStartTime(), context.getEndTime())
+					} else if len(metrics) == 1 {
+						return client.QueryMetric(context.Cluster, metrics[0], context.getGranularity(), context.getStartTime(), context.getEndTime())
+					} else {
+						return nil, nil
+					}
+				},
+			}),
+		})
 }

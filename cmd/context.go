@@ -11,8 +11,6 @@ import (
 
 type RequestContext struct {
 	Cluster           string
-	Metric            string
-	Metrics           []string
 	StartTime         string
 	EndTime           string
 	Topic             string
@@ -22,6 +20,7 @@ type RequestContext struct {
 	Granularity       string
 	LastXmin          int
 	OutputFormat      OutputFormat
+	Metric            string
 }
 
 func (r *RequestContext) getStartTime() time.Time {
@@ -41,39 +40,7 @@ func (r *RequestContext) getEndTime() time.Time {
 	}
 	return res
 }
-func (r *RequestContext) getMetric() ccloudmetrics.Metric {
-	metrics, err := getClient().GetAvailableMetrics()
-	if err != nil {
-		log.Panic(fmt.Sprintf("Failed to get all Available Metrics. Got error %s", err.Error()))
-	}
-	metricNames := []string{}
 
-	for _, metric := range metrics {
-		metricNames = append(metricNames, metric.Name)
-		if metric.Matches(r.Metric) {
-			return metric
-		}
-	}
-
-	log.Panic(fmt.Sprintf("Metric is invalid. Got %s but only have available %s", r.Metric, strings.Join(metricNames, ", ")))
-	return ccloudmetrics.Metric{}
-}
-func (r *RequestContext) getMetrics() []ccloudmetrics.Metric {
-	metrics, err := getClient().GetAvailableMetrics()
-	if err != nil {
-		log.Panic(fmt.Sprintf("Failed to get all Available Metrics. Got error %s", err.Error()))
-	}
-	validMetrics := []ccloudmetrics.Metric{}
-
-	for _, metric := range metrics {
-		for _, m := range r.Metrics {
-			if metric.Matches(m) {
-				validMetrics = append(validMetrics, metric)
-			}
-		}
-	}
-	return validMetrics
-}
 func (r *RequestContext) getGranularity() ccloudmetrics.Granularity {
 	g := ccloudmetrics.Granularity(r.Granularity)
 	if !g.IsValid() {

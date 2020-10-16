@@ -14,6 +14,7 @@ import (
 var topicsForMetric = &cobra.Command{
 	Use:   "topics",
 	Short: "List all available topics for a given metric",
+	Args:  cobra.ExactArgs(1),
 	RunE:  runE(&TopicsForMetric{}),
 }
 
@@ -22,7 +23,8 @@ type TopicsForMetric struct {
 }
 
 func (am *TopicsForMetric) req(cmd *cobra.Command, args []string, context RequestContext, client ccloudmetrics.MetricsClient) (bool, error) {
-	res, err := client.GetTopicsForMetric(context.Cluster, context.getMetric(), context.getStartTime(), context.getEndTime())
+	metrics := getMetrics(client, args...)
+	res, err := client.GetTopicsForMetric(context.Cluster, metrics[0], context.getStartTime(), context.getEndTime())
 
 	am.Results = res
 	log.WithFields(log.Fields{
@@ -60,9 +62,6 @@ func (am TopicsForMetric) outputCSV(writer *csv.Writer) error {
 func init() {
 	topicsForMetric.Flags().StringVarP(&requestcontext.Cluster, "cluster", "c", "", "Confluent Cloud Cluster ID")
 	topicsForMetric.MarkFlagRequired("cluster")
-
-	topicsForMetric.Flags().StringVarP(&requestcontext.Metric, "metric", "m", "", "Metric to fetch available topics for")
-	topicsForMetric.MarkFlagRequired("metric")
 
 	topicsForMetric.Flags().StringVar(&requestcontext.StartTime, "start", time.Now().Add(time.Duration(-1)*time.Hour).Format(ccloudmetrics.TimeFormatStr), "Start Time in the format of "+ccloudmetrics.TimeFormatStr)
 	topicsForMetric.Flags().StringVar(&requestcontext.EndTime, "end", time.Now().Format(ccloudmetrics.TimeFormatStr), "End Time in the format of "+ccloudmetrics.TimeFormatStr)

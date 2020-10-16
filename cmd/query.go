@@ -27,6 +27,7 @@ type Query struct {
 func (q *Query) req(cmd *cobra.Command, args []string, context RequestContext, client ccloudmetrics.MetricsClient) (bool, error) {
 	res, err := q.request(cmd, args, client, context)
 	q.Results = res
+	log.WithField("results", res).Info("Query Results")
 	return (len(res) > 0), err
 }
 

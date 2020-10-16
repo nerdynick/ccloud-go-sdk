@@ -216,6 +216,7 @@ func (client MetricsClient) QueryMetric(cluster string, metric Metric, granulari
 	}
 
 	response, err := client.SendQuery(queryPath, query)
+	log.WithField("response", response).Debug("QueryMetric Response")
 	return response.Data, err
 }
 
@@ -261,7 +262,7 @@ func (client MetricsClient) QueryMetrics(cluster string, metric []Metric, granul
 	for res := range resultsChan {
 		queryData = append(queryData, res...)
 	}
-
+	log.WithField("response", queryData).Debug("QueryMetrics Response")
 	return queryData, err
 }
 
