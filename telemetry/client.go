@@ -2,8 +2,6 @@ package ccloudmetrics
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/client"
@@ -64,18 +62,6 @@ type TelemetryClient struct {
 	APISecret  string
 	BaseURL    string
 	MaxWorkers int
-}
-
-func (api *TelemetryClient) getURL(path string, queryArgs url.Values) string {
-	b := strings.Builder{}
-	b.WriteString(api.BaseURL)
-	b.WriteString(path)
-	if queryArgs != nil {
-		b.WriteString("?")
-		b.WriteString(queryArgs.Encode())
-	}
-
-	return b.String()
 }
 
 //New Used to create a new MetricsClient from the given minimal set of properties
