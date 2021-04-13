@@ -1,4 +1,4 @@
-package ccloudmetrics
+package telemetry
 
 import (
 	"math"
