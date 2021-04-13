@@ -1,6 +1,6 @@
 package filter
 
-import "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
+import "github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 
 const (
 	//OpAnd is a static def for AND Operand

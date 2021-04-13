@@ -3,7 +3,7 @@ package group
 import (
 	"encoding/json"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 )
 
 type Group struct {

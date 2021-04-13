@@ -3,7 +3,7 @@ package filter
 import (
 	"testing"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -3,9 +3,9 @@ package telemetry
 import (
 	"net/url"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/metric"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/response"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/response"
 )
 
 func (client *TelemetryClient) SendDesc() (response.Metrics, error) {

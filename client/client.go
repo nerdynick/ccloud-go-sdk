@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/client/responses"
+	"github.com/nerdynick/ccloud-go-sdk/client/responses"
 	log "github.com/sirupsen/logrus"
 )
 

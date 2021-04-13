@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/client"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query"
+	"github.com/nerdynick/ccloud-go-sdk/client"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query"
 )
 
 const (

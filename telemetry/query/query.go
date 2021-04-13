@@ -3,12 +3,12 @@ package query
 import (
 	"encoding/json"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/metric"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/agg"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/filter"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/granularity"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/group"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/interval"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/agg"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/filter"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/granularity"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/group"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/interval"
 )
 
 const (

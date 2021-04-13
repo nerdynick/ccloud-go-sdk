@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 )
 
 const (

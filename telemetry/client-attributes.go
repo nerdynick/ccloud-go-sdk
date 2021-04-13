@@ -1,13 +1,13 @@
 package telemetry
 
 import (
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/metric"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/filter"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/group"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/query/interval"
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/response"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/filter"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/group"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/interval"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/response"
 )
 
 func (client TelemetryClient) SendAttri(resourceType labels.Resource, resourceID string, metric metric.Metric, field labels.Label, inter interval.Interval) ([]string, error) {

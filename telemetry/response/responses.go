@@ -1,6 +1,6 @@
 package response
 
-import "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/metric"
+import "github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
 
 type baseResponse struct {
 	Meta  Meta  `json:"meta,omitempty"`

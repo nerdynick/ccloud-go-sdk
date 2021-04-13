@@ -3,7 +3,7 @@ package agg
 import (
 	"errors"
 
-	"github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/metric"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
 )
 
 const (

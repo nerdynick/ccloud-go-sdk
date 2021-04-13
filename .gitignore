@@ -4,8 +4,8 @@
 *.dll
 *.so
 *.dylib
-confluent-cloud-metrics-go-sdk
-confluent-cloud-metrics-go-sdk-*
+ccloud-go-sdk
+ccloud-go-sdk-*
 
 # Test binary, built with `go test -c`
 *.test

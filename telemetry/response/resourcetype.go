@@ -1,6 +1,6 @@
 package response
 
-import "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
+import "github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 
 //ResourceType represents a returned Resource Type from the API
 type ResourceType struct {
