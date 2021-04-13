@@ -1,4 +1,4 @@
-module github.com/nerdynick/confluent-cloud-metrics-go-sdk
+module github.com/nerdynick/ccloud-go-sdk
 
 go 1.14
 

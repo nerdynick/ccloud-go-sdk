@@ -1,23 +1,23 @@
-# confluent-cloud-metrics-go-sdk
+# ccloud-go-sdk
 A Confluent Cloud GOLang SDK for the Telemetry API
 
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/nerdynick/confluent-cloud-metrics-go-sdk)](https://goreportcard.com/report/github.com/nerdynick/confluent-cloud-metrics-go-sdk)
-[![Build Status](https://travis-ci.com/nerdynick/confluent-cloud-metrics-go-sdk.svg?branch=master)](https://travis-ci.com/nerdynick/confluent-cloud-metrics-go-sdk) 
-![GoDoc](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk?status.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nerdynick/ccloud-go-sdk)](https://goreportcard.com/report/github.com/nerdynick/ccloud-go-sdk)
+[![Build Status](https://travis-ci.com/nerdynick/ccloud-go-sdk.svg?branch=master)](https://travis-ci.com/nerdynick/ccloud-go-sdk) 
+![GoDoc](https://godoc.org/github.com/nerdynick/ccloud-go-sdk?status.svg)
 
 # How To
 
 ## Install/Get
 
 ```bash
-go get github.com/nerdynick/confluent-cloud-metrics-go-sdk
+go get github.com/nerdynick/ccloud-go-sdk
 ```
 
 ## Create Telemetry Client
 
 ```go
-import "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry"
+import "github.com/nerdynick/ccloud-go-sdk/telemetry"
 
 func main(){
     telemetryClient := telemetry.New(MyAPIKey, MyAPISecret)
@@ -36,7 +36,7 @@ MaxWorkers int
 ## Get All Available Resources
 
 ```go
-import "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry"
+import "github.com/nerdynick/ccloud-go-sdk/telemetry"
 
 func main(){
     telemetryClient := telemetry.New(MyAPIKey, MyAPISecret)
@@ -48,8 +48,8 @@ func main(){
 
 ```go
 import (
-    "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry"
-    "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry/labels"
+    "github.com/nerdynick/ccloud-go-sdk/telemetry"
+    "github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 )
 
 func main(){
@@ -63,7 +63,7 @@ func main(){
 _Do Note:_ This func is deprecated post Telemetry API V1. You will want to use the `GetAvailableMetricsForResource` instead.
 
 ```go
-import "github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry"
+import "github.com/nerdynick/ccloud-go-sdk/telemetry"
 
 func main(){
     telemetryClient := telemetry.New(MyAPIKey, MyAPISecret)
@@ -73,5 +73,5 @@ func main(){
 
 # Documentation
 
-[Full Docs](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk) | 
-[Telemetry Docs](https://godoc.org/github.com/nerdynick/confluent-cloud-metrics-go-sdk/telemetry) | 
+[Full Docs](https://godoc.org/github.com/nerdynick/ccloud-go-sdk) | 
+[Telemetry Docs](https://godoc.org/github.com/nerdynick/ccloud-go-sdk/telemetry) | 
