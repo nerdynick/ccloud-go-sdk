@@ -11,7 +11,7 @@ import (
 )
 
 func (client TelemetryClient) SendAttri(resourceType labels.Resource, resourceID string, metric metric.Metric, field labels.Label, inter interval.Interval) ([]string, error) {
-	url := apiPathsAttributes.format(2, client.DataSet)
+	url := apiPathsAttributes.format(client, 2)
 	query := query.Query{
 		Filter:    filter.EqualTo(resourceType, resourceID),
 		GroupBy:   group.Of(field),

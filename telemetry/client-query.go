@@ -18,7 +18,7 @@ import (
 )
 
 func (client *TelemetryClient) SendQuery(query query.Query) (response.Query, error) {
-	url := apiPathsDescriptor.format(2, client.DataSet)
+	url := apiPathsDescriptor.format(*client, 2)
 	response := response.Query{}
 
 	err := client.SendPostQuery(response, url, query)
