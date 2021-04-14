@@ -55,8 +55,6 @@ type TelemetryClient struct {
 	client.Client
 	PageLimit  int
 	DataSet    Dataset
-	APIKey     string
-	APISecret  string
 	BaseURL    string
 	MaxWorkers int
 }

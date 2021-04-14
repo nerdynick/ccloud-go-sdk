@@ -17,3 +17,16 @@ func TestApiPaths(t *testing.T) {
 	assert.Equal("/v1/metrics/cloud/descriptors/metrics", apiPathsDescriptorMetrics.format(1, apiClient.DataSet))
 	assert.Equal("/v1/metrics/cloud/descriptors/resources", apiPathsDescriptorResources.format(1, apiClient.DataSet))
 }
+
+func TestNew(t *testing.T) {
+	assert := assert.New(t)
+
+	apiClient := New("apikey", "apisec")
+
+	assert.Equal("apikey", apiClient.Context.APIKey)
+	assert.Equal("apisec", apiClient.Context.APISecret)
+	assert.Equal(DefaultBaseURL, apiClient.BaseURL)
+	assert.Equal(DefaultQueryLimit, apiClient.PageLimit)
+	assert.Equal(DatasetCloud, apiClient.DataSet)
+	assert.Equal(DefaultMaxWorkers, apiClient.MaxWorkers)
+}
