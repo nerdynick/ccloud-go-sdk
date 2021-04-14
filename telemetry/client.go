@@ -16,14 +16,11 @@ const (
 	//DefaultMaxWorkers controls the max number of workers in a given Worker Pool that will be spawned
 	DefaultMaxWorkers int = 5
 
-	//DefaultAPIVersion API Version to call
-	DefaultAPIVersion int8 = 1
-
-	apiPathsQuery               apiPaths = "/v$d/metrics/$s/query"
-	apiPathsAttributes          apiPaths = "/v$d/metrics/$s/attributes"
-	apiPathsDescriptor          apiPaths = "/v$d/metrics/$s/descriptors"
-	apiPathsDescriptorMetrics   apiPaths = "/v$d/metrics/$s/descriptors/metrics"
-	apiPathsDescriptorResources apiPaths = "/v$d/metrics/$s/descriptors/resources"
+	apiPathsQuery               apiPaths = "/v%d/metrics/%s/query"
+	apiPathsAttributes          apiPaths = "/v%d/metrics/%s/attributes"
+	apiPathsDescriptor          apiPaths = "/v%d/metrics/%s/descriptors"
+	apiPathsDescriptorMetrics   apiPaths = "/v%d/metrics/%s/descriptors/metrics"
+	apiPathsDescriptorResources apiPaths = "/v%d/metrics/%s/descriptors/resources"
 
 	//DatasetCloud constant name for the CCloud dataset
 	DatasetCloud  Dataset = "cloud"
@@ -50,7 +47,7 @@ type Dataset string
 type apiPaths string
 
 func (p apiPaths) format(version int8, dataset Dataset) string {
-	return fmt.Sprintf(string(p), version, dataset)
+	return fmt.Sprintf(string(p), version, string(dataset))
 }
 
 //TelemetryClient is the SDK Client for making REST calls to the Confluent Metrics API
@@ -67,7 +64,11 @@ type TelemetryClient struct {
 //New Used to create a new MetricsClient from the given minimal set of properties
 func New(apiKey string, apiSecret string) TelemetryClient {
 	return TelemetryClient{
-		Client: client.New(apiKey, apiSecret),
+		Client:     client.New(apiKey, apiSecret),
+		DataSet:    DatasetCloud,
+		PageLimit:  DefaultQueryLimit,
+		BaseURL:    DefaultBaseURL,
+		MaxWorkers: DefaultMaxWorkers,
 	}
 }
 
