@@ -2,7 +2,8 @@ package response
 
 import "github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
 
-type baseResponse struct {
+//BaseResponse is a common struct of fields for all API responses
+type BaseResponse struct {
 	Meta  Meta  `json:"meta,omitempty"`
 	Links Links `json:"links,omitempty"`
 }
@@ -18,22 +19,25 @@ type MetaPagination struct {
 	TotalSize int `json:"total_size,omitempty"`
 }
 
-//Links respresents the Links return data
+//Links represents the Links return data
 type Links struct {
 	Next string `json:"next,omitempty"`
 }
 
+//Query represents a collection of Telemetry records as returned from a Telemetry Query request
 type Query struct {
-	*baseResponse
+	*BaseResponse
 	Data []Telemetry `json:"data"`
 }
 
+//Resources respresents a collection of resources as returned from lookup of resources
 type Resources struct {
-	*baseResponse
+	*BaseResponse
 	ResourceTypes []ResourceType `json:"data"`
 }
 
+//Metrics represents a collection of possible Available Metrics
 type Metrics struct {
-	*baseResponse
+	*BaseResponse
 	AvailableMetrics []metric.Metric `json:"data"`
 }
