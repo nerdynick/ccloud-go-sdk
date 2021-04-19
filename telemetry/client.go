@@ -5,7 +5,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/nerdynick/ccloud-go-sdk/client"
-	"github.com/nerdynick/ccloud-go-sdk/telemetry/query"
 )
 
 const (
@@ -68,13 +67,4 @@ func New(apiKey string, apiSecret string) TelemetryClient {
 		BaseURL:    DefaultBaseURL,
 		MaxWorkers: DefaultMaxWorkers,
 	}
-}
-
-func (client TelemetryClient) SendPostQuery(response interface{}, url string, q query.Query) error {
-	err := q.Validate()
-	if err != nil {
-		return err
-	}
-
-	return client.SendPost(&response, url, q)
 }

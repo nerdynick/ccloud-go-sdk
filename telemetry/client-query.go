@@ -1,10 +1,12 @@
 package telemetry
 
 import (
+	"encoding/json"
 	"math"
 	"strings"
 	"time"
 
+	"github.com/nerdynick/ccloud-go-sdk/logging"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query"
@@ -14,24 +16,51 @@ import (
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/group"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/interval"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/response"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-func (client *TelemetryClient) SendQuery(query query.Query) (response.Query, error) {
+func (client TelemetryClient) PostQuery(response interface{}, url string, q query.Query) error {
+	if client.Log.Core().Enabled(logging.InfoLevel) {
+		qJson, _ := q.ToJSON()
+		client.Log.Info("Query - Posting",
+			zap.String("URI", url),
+			zap.Binary("Query", qJson),
+		)
+	}
+
+	err := q.Validate()
+	if err != nil {
+		return err
+	}
+
+	return client.Post(&response, url, q)
+}
+
+func (client *TelemetryClient) Query(query query.Query) (response.Query, error) {
 	url := apiPathsDescriptor.format(*client, 2)
 	response := response.Query{}
 
-	err := client.SendPostQuery(response, url, query)
+	err := client.PostQuery(&response, url, query)
 	if err != nil {
 		return response, err
+	}
+
+	if client.Log.Core().Enabled(logging.InfoLevel) {
+		qJson, _ := query.ToJSON()
+		resJson, _ := json.Marshal(response)
+		client.Log.Info("Query - Response",
+			zap.String("URI", url),
+			zap.Binary("Query", qJson),
+			zap.Binary("Response", resJson),
+		)
 	}
 
 	return response, nil
 }
 
-func (client *TelemetryClient) SendQueryAsync(queryChan <-chan query.Query, resultsChan chan<- response.Query, errsChan chan<- error) {
+func (client *TelemetryClient) QueryAsync(queryChan <-chan query.Query, resultsChan chan<- response.Query, errsChan chan<- error) {
 	for q := range queryChan {
-		r, e := client.SendQuery(q)
+		r, e := client.Query(q)
 		resultsChan <- r
 		errsChan <- e
 	}
@@ -48,8 +77,7 @@ func (client *TelemetryClient) QueryMetric(resourceType labels.Resource, resourc
 		Limit:       client.PageLimit,
 	}
 
-	response, err := client.SendQuery(query)
-	log.WithField("response", response).Debug("QueryMetric Response")
+	response, err := client.Query(query)
 	for i, r := range response.Data {
 		d := r
 		d.Metric = metric.Name
@@ -119,7 +147,7 @@ func (client *TelemetryClient) QueryMetrics(resourceType labels.Resource, resour
 	return results, errors
 }
 
-//QueryMetric returns all the data points for a given metric, aggregated up to the given granularity, within the given window of time
+//QueryMetricAndLabel returns all the data points for a given metric, aggregated up to the given granularity, within the given window of time
 func (client *TelemetryClient) QueryMetricAndLabel(resourceType labels.Resource, resourceID string, granularity granularity.Granularity, inter interval.Interval, metric metric.Metric, lbl labels.Metric, lblValue string) ([]response.Telemetry, error) {
 	query := query.Query{
 		Filter:      filter.EqualTo(resourceType, resourceID).AndEqualTo(lbl, lblValue),
@@ -130,8 +158,7 @@ func (client *TelemetryClient) QueryMetricAndLabel(resourceType labels.Resource,
 		Limit:       client.PageLimit,
 	}
 
-	response, err := client.SendQuery(query)
-	log.WithField("response", response).Debug("QueryMetric Response")
+	response, err := client.Query(query)
 	for i, r := range response.Data {
 		d := r
 		d.Metric = metric.Name
@@ -164,8 +191,7 @@ func (client *TelemetryClient) QueryMetricAndTopicWithPartitions(resourceType la
 		Limit:       client.PageLimit,
 	}
 
-	response, err := client.SendQuery(query)
-	log.WithField("response", response).Debug("QueryMetric Response")
+	response, err := client.Query(query)
 	for i, r := range response.Data {
 		d := r
 		d.Metric = metric.Name
@@ -185,8 +211,7 @@ func (client *TelemetryClient) QueryMetricForAllTopics(resourceType labels.Resou
 		Limit:       client.PageLimit,
 	}
 
-	response, err := client.SendQuery(query)
-	log.WithField("response", response).Debug("QueryMetric Response")
+	response, err := client.Query(query)
 	for i, r := range response.Data {
 		d := r
 		d.Metric = metric.Name

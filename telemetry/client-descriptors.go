@@ -12,7 +12,7 @@ func (client *TelemetryClient) SendDesc() (response.Metrics, error) {
 	url := apiPathsDescriptor.format(*client, 1)
 	response := response.Metrics{}
 
-	err := client.SendGet(&response, url)
+	err := client.Get(&response, url)
 	return response, err
 }
 
@@ -22,14 +22,14 @@ func (client *TelemetryClient) SendDescMetrics(resourceType labels.Resource) (re
 
 	response := response.Metrics{}
 
-	err := client.SendGet(&response, url.String())
+	err := client.Get(&response, url.String())
 	return response, err
 }
 
 func (client *TelemetryClient) SendDescResources() (response.Resources, error) {
 	response := response.Resources{}
 	url := apiPathsDescriptorResources.format(*client, 2)
-	err := client.SendGet(&response, url)
+	err := client.Get(&response, url)
 
 	return response, err
 }

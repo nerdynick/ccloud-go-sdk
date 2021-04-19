@@ -8,7 +8,8 @@ import (
 	"time"
 
 	"github.com/nerdynick/ccloud-go-sdk/client/responses"
-	log "github.com/sirupsen/logrus"
+	"github.com/nerdynick/ccloud-go-sdk/logging"
+	"go.uber.org/zap"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 
 //Client HTTP Client Struct
 type Client struct {
+	*logging.Loggable
 	Context    Context
 	httpClient http.Client
 }
@@ -33,22 +35,22 @@ func (client *Client) Request(request *http.Request) ([]byte, error) {
 		defer res.Body.Close()
 	}
 	if err != nil {
-		log.WithFields(log.Fields{
-			"url":   request.RequestURI,
-			"error": err.Error(),
-		}).Error("Error returned from HTTP Request")
+		client.Log.Error("Error returned from HTTP Request",
+			zap.String("url", request.RequestURI),
+			zap.Error(err),
+		)
 		return nil, err
 	}
 
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		error := NewError(res.StatusCode, request.RequestURI, err)
-		log.WithFields(log.Fields{
-			"url":           request.RequestURI,
-			"error":         err.Error(),
-			"statusCode":    res.StatusCode,
-			"statusMessage": res.Status,
-		}).Error(error)
+		client.Log.Error("Request - Failed to Read Return",
+			zap.String("url", request.RequestURI),
+			zap.Error(error),
+			zap.Int("statusCode", res.StatusCode),
+			zap.String("statusMessage", res.Status),
+		)
 		return nil, err
 	}
 
@@ -57,19 +59,20 @@ func (client *Client) Request(request *http.Request) ([]byte, error) {
 		json.Unmarshal(resBody, &err)
 		error := NewError(res.StatusCode, request.RequestURI, err)
 
-		log.WithFields(log.Fields{
-			"url":           request.RequestURI,
-			"statusCode":    res.StatusCode,
-			"statusMessage": res.Status,
-		}).Error(error)
+		client.Log.Error("Request - Invalid response code",
+			zap.String("url", request.RequestURI),
+			zap.Int("statusCode", res.StatusCode),
+			zap.String("statusMessage", res.Status),
+			zap.Error(error),
+		)
 		return nil, error
 	}
 
-	if log.IsLevelEnabled(log.TraceLevel) {
-		log.WithFields(log.Fields{
-			"url":     request.RequestURI,
-			"results": string(resBody),
-		}).Trace("Api Request Results")
+	if client.Log.Core().Enabled(logging.DebugLevel) {
+		client.Log.Debug("Request - Body",
+			zap.String("url", request.RequestURI),
+			zap.String("results", string(resBody)),
+		)
 	}
 
 	return resBody, nil
@@ -87,10 +90,10 @@ func (client *Client) RequestAsync(request *http.Request, responseChan chan<- []
 
 //NewRequest Builds a new http Request
 func (client *Client) NewRequest(method string, url string, body []byte) (*http.Request, error) {
-	log.WithFields(log.Fields{
-		"method": method,
-		"url":    url,
-	}).Trace("Sending API Request")
+	client.Log.Debug("Creating Request",
+		zap.String("method", method),
+		zap.String("url", url),
+	)
 
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 
@@ -135,7 +138,7 @@ func (client *Client) SendRequestAsync(method string, url string, body []byte, r
 type ResponseSupplier func() *interface{}
 
 //SendGet send a GET request to the API
-func (client *Client) SendGet(response interface{}, url string) error {
+func (client *Client) Get(response interface{}, url string) error {
 	res, err := client.SendRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -144,7 +147,7 @@ func (client *Client) SendGet(response interface{}, url string) error {
 }
 
 //SendGetAsync send a GET request to the API async
-func (client *Client) SendGetAsync(responseSupplier ResponseSupplier, url string, responseChan chan<- interface{}, errorChan chan<- error) {
+func (client *Client) GetAsync(responseSupplier ResponseSupplier, url string, responseChan chan<- interface{}, errorChan chan<- error) {
 	go func() {
 		respChan := make(chan []byte, 1)
 		client.SendRequestAsync("GET", url, nil, respChan, errorChan)
@@ -161,7 +164,7 @@ func (client *Client) SendGetAsync(responseSupplier ResponseSupplier, url string
 }
 
 //SendPost send a POST request with a given JSON Body
-func (client Client) SendPost(response interface{}, url string, jsonBody interface{}) error {
+func (client Client) Post(response interface{}, url string, jsonBody interface{}) error {
 	body, err := json.Marshal(jsonBody)
 	if err != nil {
 		return err
@@ -175,7 +178,7 @@ func (client Client) SendPost(response interface{}, url string, jsonBody interfa
 }
 
 //SendPostAsync send a POST request with a given JSON Body async
-func (client *Client) SendPostAsync(responseSupplier ResponseSupplier, url string, jsonBody interface{}, responseChan chan<- interface{}, errorChan chan<- error) {
+func (client *Client) PostAsync(responseSupplier ResponseSupplier, url string, jsonBody interface{}, responseChan chan<- interface{}, errorChan chan<- error) {
 	go func() {
 		respChan := make(chan []byte, 1)
 
@@ -200,8 +203,11 @@ func (client *Client) SendPostAsync(responseSupplier ResponseSupplier, url strin
 
 //New Creates a new CCloud Metrics HTTP Client
 func New(apiKey string, apiSecret string) Client {
+	log := logging.New("CCloudAPIClient")
+
 	return Client{
-		Context: NewContext(apiKey, apiSecret),
+		Loggable: log,
+		Context:  NewContext(apiKey, apiSecret),
 		httpClient: http.Client{
 			Timeout: DefaultRequestTimeout,
 			Transport: &http.Transport{

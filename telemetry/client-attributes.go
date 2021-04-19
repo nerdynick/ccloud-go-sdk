@@ -1,6 +1,9 @@
 package telemetry
 
 import (
+	"encoding/json"
+
+	"github.com/nerdynick/ccloud-go-sdk/logging"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/labels"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query"
@@ -8,6 +11,7 @@ import (
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/group"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/interval"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/response"
+	"go.uber.org/zap"
 )
 
 func (client TelemetryClient) SendAttri(resourceType labels.Resource, resourceID string, metric metric.Metric, field labels.Label, inter interval.Interval) ([]string, error) {
@@ -20,9 +24,19 @@ func (client TelemetryClient) SendAttri(resourceType labels.Resource, resourceID
 	}
 	response := response.Query{}
 
-	err := client.SendPostQuery(&response, url, query)
+	err := client.PostQuery(&response, url, query)
 	if err != nil {
 		return nil, err
+	}
+
+	if client.Log.Core().Enabled(logging.InfoLevel) {
+		qJson, _ := query.ToJSON()
+		resJson, _ := json.Marshal(response)
+		client.Log.Info("Query - Response",
+			zap.String("URI", url),
+			zap.Binary("Query", qJson),
+			zap.Binary("Response", resJson),
+		)
 	}
 
 	values := make([]string, len(response.Data))
