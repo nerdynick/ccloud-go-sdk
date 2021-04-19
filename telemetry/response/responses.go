@@ -1,6 +1,9 @@
 package response
 
-import "github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
+import (
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/resourcetype"
+)
 
 //BaseResponse is a common struct of fields for all API responses
 type BaseResponse struct {
@@ -33,7 +36,7 @@ type Query struct {
 //Resources respresents a collection of resources as returned from lookup of resources
 type Resources struct {
 	*BaseResponse
-	ResourceTypes []ResourceType `json:"data"`
+	ResourceTypes []resourcetype.ResourceType `json:"data"`
 }
 
 //Metrics represents a collection of possible Available Metrics
