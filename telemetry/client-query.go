@@ -112,17 +112,17 @@ func (client *TelemetryClient) QueryMetrics(resourceType labels.Resource, resour
 	defer close(resultsChan)
 	defer close(errorsChan)
 
-	log.Debug("Starting up routines")
+	client.Log.Debug("Starting up routines")
 	for id := 0; id < int(math.Min(float64(numMetrics), float64(client.MaxWorkers))); id++ {
 		go client.QueryMetricAsync(resourceType, resourceID, granularity, inter, metricsChan, resultsChan, errorsChan)
 	}
 
-	log.Debug("Sending Metrics")
+	client.Log.Debug("Sending Metrics")
 	for _, metric := range metrics {
-		log.Debug("Sending Metric: " + metric.Name)
+		client.Log.Debug("Sending Metric: " + metric.Name)
 		metricsChan <- metric
 	}
-	log.Debug("Done Sending Metrics. Closing Channel")
+	client.Log.Debug("Done Sending Metrics. Closing Channel")
 	close(metricsChan)
 
 	results := make(map[string][]response.Telemetry)
@@ -141,9 +141,7 @@ func (client *TelemetryClient) QueryMetrics(resourceType labels.Resource, resour
 
 		}
 	}
-	log.WithField("results", results).
-		WithField("errors", errors).
-		Debug("QueryMetrics Response")
+
 	return results, errors
 }
 
