@@ -18,7 +18,9 @@ func (client *TelemetryClient) SendDesc() (response.Metrics, error) {
 
 func (client *TelemetryClient) SendDescMetrics(resourceType labels.Resource) (response.Metrics, error) {
 	url, _ := url.ParseRequestURI(apiPathsDescriptorMetrics.format(*client, 2))
-	url.Query().Add("resource_type", resourceType.Key)
+	q := url.Query()
+	q.Add("resource_type", resourceType.Key)
+	url.RawQuery = q.Encode()
 
 	response := response.Metrics{}
 

@@ -93,6 +93,7 @@ func (client *Client) NewRequest(method string, url string, body []byte) (*http.
 	client.Log.Debug("Creating Request",
 		zap.String("method", method),
 		zap.String("url", url),
+		zap.Binary("Body", body),
 	)
 
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
