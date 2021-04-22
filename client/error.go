@@ -17,7 +17,7 @@ func (err Error) Error() string {
 type RateLimitedError Error
 
 func (err RateLimitedError) Error() string {
-	return fmt.Sprintf("Your account has hit or exceded the current request/sec rate limitation")
+	return "Your account has hit or exceded the current request/sec rate limitation"
 }
 
 //NewError constructes a new Client Error

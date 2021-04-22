@@ -1,10 +1,12 @@
 package telemetry
 
 import (
+	"encoding/json"
 	"fmt"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/nerdynick/ccloud-go-sdk/client"
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/response"
 )
 
 const (
@@ -61,7 +63,11 @@ type TelemetryClient struct {
 //New Used to create a new MetricsClient from the given minimal set of properties
 func New(apiKey string, apiSecret string) TelemetryClient {
 	return TelemetryClient{
-		Client:     client.New(apiKey, apiSecret),
+		Client: client.New(apiKey, apiSecret, func(statusCode int, body []byte) error {
+			err := response.ErrorResponse{}
+			json.Unmarshal(body, &err)
+			return err
+		}),
 		DataSet:    DatasetCloud,
 		PageLimit:  DefaultQueryLimit,
 		BaseURL:    DefaultBaseURL,

@@ -1,6 +1,9 @@
 package labels
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 var (
 	//ResourceKafka is a static reference for a Kafka Cluster's ID
@@ -25,7 +28,11 @@ type Resource struct {
 }
 
 func (l Resource) MarshalJSON() ([]byte, error) {
-	return json.Marshal(l.Key)
+	if strings.HasPrefix(l.Key, "resource.") {
+		return json.Marshal(l.Key)
+	} else {
+		return json.Marshal("resource." + l.Key)
+	}
 }
 func (l Resource) String() string {
 	return l.Key

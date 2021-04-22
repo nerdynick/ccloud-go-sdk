@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nerdynick/ccloud-go-sdk/client/responses"
 	"github.com/nerdynick/ccloud-go-sdk/logging"
 	"go.uber.org/zap"
 )
@@ -24,8 +23,9 @@ const (
 //Client HTTP Client Struct
 type Client struct {
 	*logging.Loggable
-	Context    Context
-	httpClient http.Client
+	Context          Context
+	httpClient       http.Client
+	HTTPErrorHandler func(int, []byte) error
 }
 
 //Request Sends a Request synchronously
@@ -55,9 +55,11 @@ func (client *Client) Request(request *http.Request) ([]byte, error) {
 	}
 
 	if res.StatusCode != 200 {
-		err := responses.ErrorResponse{}
-		json.Unmarshal(resBody, &err)
+		err := client.HTTPErrorHandler(res.StatusCode, resBody)
 		error := NewError(res.StatusCode, request.RequestURI, err)
+
+		// err := responses.ErrorResponse{}
+		// json.Unmarshal(resBody, &err)
 
 		client.Log.Error("Request - Invalid response code",
 			zap.String("url", request.RequestURI),
@@ -203,12 +205,13 @@ func (client *Client) PostAsync(responseSupplier ResponseSupplier, url string, j
 }
 
 //New Creates a new CCloud Metrics HTTP Client
-func New(apiKey string, apiSecret string) Client {
+func New(apiKey string, apiSecret string, httpErrorHandler func(int, []byte) error) Client {
 	log := logging.New("CCloudAPIClient")
 
 	return Client{
-		Loggable: log,
-		Context:  NewContext(apiKey, apiSecret),
+		Loggable:         log,
+		Context:          NewContext(apiKey, apiSecret),
+		HTTPErrorHandler: httpErrorHandler,
 		httpClient: http.Client{
 			Timeout: DefaultRequestTimeout,
 			Transport: &http.Transport{

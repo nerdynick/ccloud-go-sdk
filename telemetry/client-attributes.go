@@ -56,3 +56,7 @@ func (client TelemetryClient) GetKafkaTopicsForMetric(cluster string, metric met
 func (client TelemetryClient) GetKafkaRequestTypes(cluster string, inter interval.Interval) ([]string, error) {
 	return client.SendAttri(labels.ResourceKafka, cluster, metric.Requests, labels.MetricType, inter)
 }
+
+func (client TelemetryClient) GetTopicsForMetric(cluster string, metric metric.Metric, inter interval.Interval) ([]string, error) {
+
+}

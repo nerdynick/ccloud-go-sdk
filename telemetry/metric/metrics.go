@@ -12,17 +12,17 @@ const (
 )
 
 var (
-	ReceivedBytes     = new("io.confluent.kafka.server/received_bytes")
-	SentBytes         = new("io.confluent.kafka.server/sent_bytes")
-	ReceivedRecords   = new("io.confluent.kafka.server/received_records")
-	SentRecords       = new("io.confluent.kafka.server/sent_records")
-	RetainedBytes     = new("io.confluent.kafka.server/retained_bytes")
-	ActiveConnections = new("io.confluent.kafka.server/active_connection_count")
-	Requests          = new("io.confluent.kafka.server/request_count")
-	Partition         = new("io.confluent.kafka.server/partition_count")
-	SuccessAuth       = new("io.confluent.kafka.server/successful_authentication_count")
+	ReceivedBytes     = New("io.confluent.kafka.server/received_bytes")
+	SentBytes         = New("io.confluent.kafka.server/sent_bytes")
+	ReceivedRecords   = New("io.confluent.kafka.server/received_records")
+	SentRecords       = New("io.confluent.kafka.server/sent_records")
+	RetainedBytes     = New("io.confluent.kafka.server/retained_bytes")
+	ActiveConnections = New("io.confluent.kafka.server/active_connection_count")
+	Requests          = New("io.confluent.kafka.server/request_count")
+	Partition         = New("io.confluent.kafka.server/partition_count")
+	SuccessAuth       = New("io.confluent.kafka.server/successful_authentication_count")
 
-	KnownMetrics = []Metric{
+	KnownKafkaServerMetrics = []Metric{
 		ReceivedBytes,
 		SentBytes,
 		ReceivedRecords,
@@ -58,7 +58,7 @@ func (m Metric) ShortName() string {
 	return strings.TrimPrefix(m.Name, metricPrefix)
 }
 
-func new(name string) Metric {
+func New(name string) Metric {
 	if strings.HasPrefix(name, metricPrefix) {
 		return Metric{Name: name}
 	} else {
