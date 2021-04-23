@@ -34,8 +34,8 @@ func (client TelemetryClient) SendAttri(resourceType labels.Resource, resourceID
 		resJson, _ := json.Marshal(response)
 		client.Log.Info("Query - Response",
 			zap.String("URI", url),
-			zap.Binary("Query", qJson),
-			zap.Binary("Response", resJson),
+			zap.ByteString("Query", qJson),
+			zap.ByteString("Response", resJson),
 		)
 	}
 
