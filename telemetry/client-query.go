@@ -24,7 +24,7 @@ func (client TelemetryClient) PostQuery(response interface{}, url string, q quer
 		qJson, _ := q.ToJSON()
 		client.Log.Info("Query - Posting",
 			zap.String("URI", url),
-			zap.Binary("Query", qJson),
+			zap.ByteString("Query", qJson),
 		)
 	}
 
@@ -50,8 +50,8 @@ func (client *TelemetryClient) Query(query query.Query) (response.Query, error) 
 		resJson, _ := json.Marshal(response)
 		client.Log.Info("Query - Response",
 			zap.String("URI", url),
-			zap.Binary("Query", qJson),
-			zap.Binary("Response", resJson),
+			zap.ByteString("Query", qJson),
+			zap.ByteString("Response", resJson),
 		)
 	}
 
