@@ -40,10 +40,6 @@ func (query Query) ToJSON() ([]byte, error) {
 	return json.Marshal(query)
 }
 
-func (query Query) MarshalJSON() ([]byte, error) {
-	return json.Marshal(query)
-}
-
 func (query Query) Validate() error {
 	for _, a := range query.Aggreations {
 		err := a.Validate()
