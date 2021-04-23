@@ -2,8 +2,11 @@ package interval
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
+	"github.com/rickb777/date/period"
 	"github.com/rickb777/date/timespan"
 )
 
@@ -43,4 +46,53 @@ func EndingAt(duration time.Duration, end time.Time) Interval {
 
 func Of(intervals ...Interval) []Interval {
 	return intervals
+}
+
+func Parse(value string) (Interval, error) {
+	slash := strings.IndexByte(value, '/')
+	if slash < 0 {
+		return Interval{}, fmt.Errorf("cannot parse %q because there is no separator '/'", value)
+	}
+
+	start := value[:slash]
+	rest := value[slash+1:]
+
+	if rest == "" {
+		return Interval{}, fmt.Errorf("cannot parse %q because there is end time or duration", value)
+	}
+
+	if start[0] == 'P' {
+		p, err := period.Parse(start)
+		if err != nil {
+			return Interval{}, err
+		}
+		t, err := time.Parse(time.RFC3339, rest)
+		if err != nil {
+			return Interval{}, err
+		}
+		return EndingAt(p.DurationApprox(), t), nil
+	} else if rest[0] == 'P' {
+		t, err := time.Parse(time.RFC3339, start)
+		if err != nil {
+			return Interval{}, err
+		}
+		p, err := period.Parse(rest)
+		if err != nil {
+			return Interval{}, err
+		}
+		return StartingFrom(t, p.DurationApprox()), nil
+	} else {
+		s, err := time.Parse(time.RFC3339, start)
+		if err != nil {
+			return Interval{}, err
+		}
+
+		e, err := time.Parse(time.RFC3339, rest)
+		if err != nil {
+			return Interval{}, err
+		}
+
+		return Between(s, e), nil
+	}
+
 }
