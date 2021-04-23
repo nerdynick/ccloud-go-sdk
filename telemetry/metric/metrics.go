@@ -44,7 +44,7 @@ type Metric struct {
 	Labels         []labels.Metric `json:"labels,omitempty" cjson:"labels,omitempty"`
 }
 
-func (m *Metric) MarshalJSON() ([]byte, error) {
+func (m Metric) MarshalJSON() ([]byte, error) {
 	return json.Marshal(m.Name)
 }
 

@@ -15,7 +15,7 @@ type Interval struct {
 	withDuration bool
 }
 
-func (i *Interval) MarshalJSON() ([]byte, error) {
+func (i Interval) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.String())
 }
 

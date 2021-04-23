@@ -52,7 +52,7 @@ type Granularity struct {
 	Period      period.Period
 }
 
-func (g *Granularity) MarshalJSON() ([]byte, error) {
+func (g Granularity) MarshalJSON() ([]byte, error) {
 	return json.Marshal(g.String())
 }
 

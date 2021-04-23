@@ -10,7 +10,7 @@ type Group struct {
 	Labels []labels.Label
 }
 
-func (g *Group) MarshalJSON() ([]byte, error) {
+func (g Group) MarshalJSON() ([]byte, error) {
 	return json.Marshal(g.Labels)
 }
 func (g Group) And(labels ...labels.Label) Group {
