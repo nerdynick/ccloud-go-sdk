@@ -37,7 +37,7 @@ func (client TelemetryClient) PostQuery(response interface{}, url string, q quer
 }
 
 func (client *TelemetryClient) Query(query query.Query) (response.Query, error) {
-	url := apiPathsDescriptor.format(*client, 2)
+	url := APIPathDescriptor.Format(*client, 2)
 	response := response.Query{}
 
 	err := client.PostQuery(&response, url, query)

@@ -15,7 +15,7 @@ import (
 )
 
 func (client TelemetryClient) SendAttri(resourceType labels.Resource, resourceID string, metric metric.Metric, field labels.Label, inter interval.Interval) ([]string, error) {
-	url := apiPathsAttributes.format(client, 2)
+	url := APIPathAttributes.Format(client, 2)
 	query := query.Query{
 		Filter:    filter.EqualTo(resourceType, resourceID),
 		GroupBy:   group.Of(field),
@@ -55,8 +55,4 @@ func (client TelemetryClient) GetKafkaTopicsForMetric(cluster string, metric met
 //GetKafkaRequestTypes returns all the available request types for a given Kafka Cluster
 func (client TelemetryClient) GetKafkaRequestTypes(cluster string, inter interval.Interval) ([]string, error) {
 	return client.SendAttri(labels.ResourceKafka, cluster, metric.Requests, labels.MetricType, inter)
-}
-
-func (client TelemetryClient) GetTopicsForMetric(cluster string, metric metric.Metric, inter interval.Interval) ([]string, error) {
-
 }

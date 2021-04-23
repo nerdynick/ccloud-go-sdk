@@ -58,9 +58,6 @@ func (client *Client) Request(request *http.Request) ([]byte, error) {
 		err := client.HTTPErrorHandler(res.StatusCode, resBody)
 		error := NewError(res.StatusCode, request.RequestURI, err)
 
-		// err := responses.ErrorResponse{}
-		// json.Unmarshal(resBody, &err)
-
 		client.Log.Error("Request - Invalid response code",
 			zap.String("url", request.RequestURI),
 			zap.Int("statusCode", res.StatusCode),
@@ -104,7 +101,7 @@ func (client *Client) NewRequest(method string, url string, body []byte) (*http.
 		return nil, err
 	}
 
-	req.SetBasicAuth(client.Context.APIKey, client.Context.APISecret)
+	req.SetBasicAuth(client.Context.APIKey, client.Context.APISecret.Value())
 
 	req.Header.Add("Content-Type", "application/json")
 	if client.Context.UserAgent != "" {
@@ -205,12 +202,12 @@ func (client *Client) PostAsync(responseSupplier ResponseSupplier, url string, j
 }
 
 //New Creates a new CCloud Metrics HTTP Client
-func New(apiKey string, apiSecret string, httpErrorHandler func(int, []byte) error) Client {
+func New(apiKey string, apiSecret string, baseURL string, httpErrorHandler func(int, []byte) error) Client {
 	log := logging.New("CCloudAPIClient")
 
 	return Client{
 		Loggable:         log,
-		Context:          NewContext(apiKey, apiSecret),
+		Context:          NewContext(apiKey, apiSecret, baseURL),
 		HTTPErrorHandler: httpErrorHandler,
 		httpClient: http.Client{
 			Timeout: DefaultRequestTimeout,

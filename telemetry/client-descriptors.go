@@ -9,7 +9,7 @@ import (
 )
 
 func (client *TelemetryClient) SendDesc() (response.Metrics, error) {
-	url := apiPathsDescriptor.format(*client, 1)
+	url := APIPathDescriptor.Format(*client, 1)
 	response := response.Metrics{}
 
 	err := client.Get(&response, url)
@@ -17,7 +17,7 @@ func (client *TelemetryClient) SendDesc() (response.Metrics, error) {
 }
 
 func (client *TelemetryClient) SendDescMetrics(resourceType resourcetype.ResourceType) (response.Metrics, error) {
-	url, _ := url.ParseRequestURI(apiPathsDescriptorMetrics.format(*client, 2))
+	url, _ := url.ParseRequestURI(APIPathDescriptorMetrics.Format(*client, 2))
 	q := url.Query()
 	q.Add("resource_type", resourceType.Type)
 	url.RawQuery = q.Encode()
@@ -30,7 +30,7 @@ func (client *TelemetryClient) SendDescMetrics(resourceType resourcetype.Resourc
 
 func (client *TelemetryClient) SendDescResources() (response.Resources, error) {
 	response := response.Resources{}
-	url := apiPathsDescriptorResources.format(*client, 2)
+	url := APIPathDescriptorResources.Format(*client, 2)
 	err := client.Get(&response, url)
 
 	return response, err

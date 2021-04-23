@@ -12,11 +12,18 @@ type ErrorResponse struct {
 }
 
 func (err ErrorResponse) Error() string {
-	codes := make([]string, len(err.Errors))
-	for i, e := range err.Errors {
-		codes[i] = e.Error()
+	if len(err.Errors) > 1 {
+		codes := make([]string, len(err.Errors))
+		for i, e := range err.Errors {
+			codes[i] = e.Error()
+		}
+		return fmt.Sprintf("CCloud API Errors [`%s`]", strings.Join(codes, "`,`"))
+	} else if len(err.Errors) == 1 {
+		return err.Errors[0].Error()
+	} else {
+		return err.Err.Error()
 	}
-	return fmt.Sprintf("CCloud API Errors [`%s`]", strings.Join(codes, "`,`"))
+
 }
 
 //Error a given error
@@ -35,7 +42,7 @@ func (err Error) Error() string {
 	if err.Message != "" {
 		return fmt.Sprintf("APIError(%s - %s)", err.Code, err.Message)
 	} else {
-		return fmt.Sprintf("APIError(%s - %s)", err.Code, err.Detail)
+		return fmt.Sprintf("APIError(%s/%s - %s)", err.Code, err.Status, err.Detail)
 	}
 }
 

@@ -2,11 +2,10 @@ package telemetry
 
 import (
 	"encoding/json"
-	"fmt"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/nerdynick/ccloud-go-sdk/client"
-	"github.com/nerdynick/ccloud-go-sdk/telemetry/response"
+	"github.com/nerdynick/ccloud-go-sdk/client/response"
 )
 
 const (
@@ -16,12 +15,6 @@ const (
 	DefaultBaseURL string = "https://api.telemetry.confluent.cloud"
 	//DefaultMaxWorkers controls the max number of workers in a given Worker Pool that will be spawned
 	DefaultMaxWorkers int = 5
-
-	apiPathsQuery               apiPaths = "%s/v%d/metrics/%s/query"
-	apiPathsAttributes          apiPaths = "%s/v%d/metrics/%s/attributes"
-	apiPathsDescriptor          apiPaths = "%s/v%d/metrics/%s/descriptors"
-	apiPathsDescriptorMetrics   apiPaths = "%s/v%d/metrics/%s/descriptors/metrics"
-	apiPathsDescriptorResources apiPaths = "%s/v%d/metrics/%s/descriptors/resources"
 
 	//DatasetCloud constant name for the CCloud dataset
 	DatasetCloud  Dataset = "cloud"
@@ -45,32 +38,24 @@ var (
 //Dataset struct to referece the selected dataset
 type Dataset string
 
-type apiPaths string
-
-func (p apiPaths) format(telemetryClient TelemetryClient, version int8) string {
-	return fmt.Sprintf(string(p), telemetryClient.BaseURL, version, string(telemetryClient.DataSet))
-}
-
 //TelemetryClient is the SDK Client for making REST calls to the Confluent Metrics API
 type TelemetryClient struct {
 	client.Client
 	PageLimit  int
 	DataSet    Dataset
-	BaseURL    string
 	MaxWorkers int
 }
 
 //New Used to create a new MetricsClient from the given minimal set of properties
 func New(apiKey string, apiSecret string) TelemetryClient {
 	return TelemetryClient{
-		Client: client.New(apiKey, apiSecret, func(statusCode int, body []byte) error {
+		DataSet:    DatasetCloud,
+		PageLimit:  DefaultQueryLimit,
+		MaxWorkers: DefaultMaxWorkers,
+		Client: client.New(apiKey, apiSecret, DefaultBaseURL, func(statusCode int, body []byte) error {
 			err := response.ErrorResponse{}
 			json.Unmarshal(body, &err)
 			return err
 		}),
-		DataSet:    DatasetCloud,
-		PageLimit:  DefaultQueryLimit,
-		BaseURL:    DefaultBaseURL,
-		MaxWorkers: DefaultMaxWorkers,
 	}
 }
