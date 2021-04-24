@@ -12,26 +12,52 @@ const (
 )
 
 var (
-	ReceivedBytes     = New("io.confluent.kafka.server/received_bytes")
-	SentBytes         = New("io.confluent.kafka.server/sent_bytes")
-	ReceivedRecords   = New("io.confluent.kafka.server/received_records")
-	SentRecords       = New("io.confluent.kafka.server/sent_records")
-	RetainedBytes     = New("io.confluent.kafka.server/retained_bytes")
-	ActiveConnections = New("io.confluent.kafka.server/active_connection_count")
-	Requests          = New("io.confluent.kafka.server/request_count")
-	Partition         = New("io.confluent.kafka.server/partition_count")
-	SuccessAuth       = New("io.confluent.kafka.server/successful_authentication_count")
+	KafkaServerReceivedBytes     = New("io.confluent.kafka.server/received_bytes")
+	KafkaServerSentBytes         = New("io.confluent.kafka.server/sent_bytes")
+	KafkaServerReceivedRecords   = New("io.confluent.kafka.server/received_records")
+	KafkaServerSentRecords       = New("io.confluent.kafka.server/sent_records")
+	KafkaServerRetainedBytes     = New("io.confluent.kafka.server/retained_bytes")
+	KafkaServerActiveConnections = New("io.confluent.kafka.server/active_connection_count")
+	KafkaServerRequests          = New("io.confluent.kafka.server/request_count")
+	KafkaServerPartition         = New("io.confluent.kafka.server/partition_count")
+	KafkaServerSuccessAuth       = New("io.confluent.kafka.server/successful_authentication_count")
+
+	KSQLStreamingUnitCount = New("io.confluent.kafka.ksql/streaming_unit_count")
+
+	SchemaRegSchemaCount = New("io.confluent.kafka.schema_registry/schema_count")
+
+	ConnectorSentRecords            = New("io.confluent.kafka.connect/sent_records")
+	ConnectorReceivedRecords        = New("io.confluent.kafka.connect/received_records")
+	ConnectorSentBytes              = New("io.confluent.kafka.connect/sent_bytes")
+	ConnectorReceivedBytes          = New("io.confluent.kafka.connect/received_bytes")
+	ConnectorDeadLetterQueueRecords = New("io.confluent.kafka.connect/dead_letter_queue_records")
 
 	KnownKafkaServerMetrics = []Metric{
-		ReceivedBytes,
-		SentBytes,
-		ReceivedRecords,
-		SentRecords,
-		RetainedBytes,
-		ActiveConnections,
-		Requests,
-		Partition,
-		SuccessAuth,
+		KafkaServerReceivedBytes,
+		KafkaServerSentBytes,
+		KafkaServerReceivedRecords,
+		KafkaServerSentRecords,
+		KafkaServerRetainedBytes,
+		KafkaServerActiveConnections,
+		KafkaServerRequests,
+		KafkaServerPartition,
+		KafkaServerSuccessAuth,
+	}
+
+	KnownKSQLMetrics = []Metric{
+		KSQLStreamingUnitCount,
+	}
+
+	KnownSchemaRegMetrics = []Metric{
+		SchemaRegSchemaCount,
+	}
+
+	KnownConnectorMetrics = []Metric{
+		ConnectorSentRecords,
+		ConnectorReceivedRecords,
+		ConnectorSentBytes,
+		ConnectorReceivedBytes,
+		ConnectorDeadLetterQueueRecords,
 	}
 )
 
