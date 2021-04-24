@@ -12,13 +12,13 @@ const (
 )
 
 var (
-	KafkaServerReceivedBytes     = New("io.confluent.kafka.server/received_bytes")
-	KafkaServerSentBytes         = New("io.confluent.kafka.server/sent_bytes")
-	KafkaServerReceivedRecords   = New("io.confluent.kafka.server/received_records")
-	KafkaServerSentRecords       = New("io.confluent.kafka.server/sent_records")
-	KafkaServerRetainedBytes     = New("io.confluent.kafka.server/retained_bytes")
+	KafkaServerReceivedBytes     = New("io.confluent.kafka.server/received_bytes", labels.MetricTopic, labels.MetricPartition)
+	KafkaServerSentBytes         = New("io.confluent.kafka.server/sent_bytes", labels.MetricTopic, labels.MetricPartition)
+	KafkaServerReceivedRecords   = New("io.confluent.kafka.server/received_records", labels.MetricTopic, labels.MetricPartition)
+	KafkaServerSentRecords       = New("io.confluent.kafka.server/sent_records", labels.MetricTopic, labels.MetricPartition)
+	KafkaServerRetainedBytes     = New("io.confluent.kafka.server/retained_bytes", labels.MetricTopic, labels.MetricPartition)
 	KafkaServerActiveConnections = New("io.confluent.kafka.server/active_connection_count")
-	KafkaServerRequests          = New("io.confluent.kafka.server/request_count")
+	KafkaServerRequests          = New("io.confluent.kafka.server/request_count", labels.MetricType)
 	KafkaServerPartition         = New("io.confluent.kafka.server/partition_count")
 	KafkaServerSuccessAuth       = New("io.confluent.kafka.server/successful_authentication_count")
 
@@ -84,11 +84,11 @@ func (m Metric) ShortName() string {
 	return strings.TrimPrefix(m.Name, metricPrefix)
 }
 
-func New(name string) Metric {
+func New(name string, labels ...labels.Metric) Metric {
 	if strings.HasPrefix(name, metricPrefix) {
-		return Metric{Name: name}
+		return Metric{Name: name, Labels: labels}
 	} else {
-		return Metric{Name: metricPrefix + name}
+		return Metric{Name: metricPrefix + name, Labels: labels}
 	}
 
 }
