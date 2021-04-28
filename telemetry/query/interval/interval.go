@@ -26,11 +26,18 @@ func (i Interval) String() string {
 
 func (i Interval) MinGranularity() granularity.Granularity {
 	for _, g := range granularity.AvailableGranularities {
-		if g.IsValidInterval(i) {
+		if i.IsValidGranularity(g) {
 			return g
 		}
 	}
 	return granularity.OneMin
+}
+
+//IsValidInterval Checks if a Grandularity is valid for a given Interval of time.
+//Granularities have a max on how big of an internval they can be paired with.
+func (i Interval) IsValidGranularity(g granularity.Granularity) bool {
+	dur := i.Duration()
+	return dur >= g.Duration && dur <= g.MaxDuration
 }
 
 func Between(start, end time.Time) Interval {

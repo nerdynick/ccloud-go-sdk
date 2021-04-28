@@ -5,7 +5,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/interval"
 	"github.com/rickb777/date/period"
 )
 
@@ -75,11 +74,6 @@ func (g Granularity) IsValid() bool {
 	return false
 }
 
-func (g Granularity) IsValidInterval(interval interval.Interval) bool {
-	dur := interval.Duration()
-	return dur >= g.Duration && dur <= g.MaxDuration
-}
-
 func newGranularity(g string) Granularity {
 	if g == "ALL" {
 		p, _ := period.NewOf(maxDuration)
@@ -93,8 +87,8 @@ func newGranularity(g string) Granularity {
 	p, _ := period.Parse(g)
 	d, _ := p.Duration()
 
+	//Find max duration for a given Granularity. This is based off the documented maxs for Grandularities.
 	var maxDur time.Duration
-
 	if d <= time.Minute {
 		maxDur = time.Hour * 6
 	} else if d <= (5 * time.Minute) {

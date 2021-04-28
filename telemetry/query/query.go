@@ -2,6 +2,7 @@ package query
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/metric"
 	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/agg"
@@ -22,13 +23,13 @@ const (
 // This is the JSON structure for the endpoint
 // https://api.telemetry.confluent.cloud/v1/metrics/cloud/descriptors
 type Query struct {
-	Aggreations []agg.Aggregation       `json:"aggregations,omitempty"`
-	Filter      filter.Filter           `json:"filter,omitempty"`
-	Granularity granularity.Granularity `json:"granularity,omitempty"`
-	GroupBy     group.Group             `json:"group_by,omitempty"`
-	Intervals   []interval.Interval     `json:"intervals,omitempty"`
-	Limit       int                     `json:"limit,omitempty"`
-	Metric      metric.Metric           `json:"metric,omitempty"`
+	Aggregations []agg.Aggregation       `json:"aggregations,omitempty"`
+	Filter       filter.Filter           `json:"filter,omitempty"`
+	Granularity  granularity.Granularity `json:"granularity,omitempty"`
+	GroupBy      group.Group             `json:"group_by,omitempty"`
+	Intervals    []interval.Interval     `json:"intervals,omitempty"`
+	Limit        int                     `json:"limit,omitempty"`
+	Metric       metric.Metric           `json:"metric,omitempty"`
 }
 
 // func (q *Query) Limit(limit int) *Query {
@@ -41,12 +42,36 @@ func (query Query) ToJSON() ([]byte, error) {
 }
 
 func (query Query) Validate() error {
-	for _, a := range query.Aggreations {
+	for _, a := range query.Aggregations {
 		err := a.Validate()
 		if err != nil {
 			return err
 		}
 	}
 
+	if len(query.Intervals) > 0 && query.Granularity.IsValid() {
+		for _, i := range query.Intervals {
+			if !i.IsValidGranularity(query.Granularity) {
+				return errors.New("invalid Interval and Range comparison. Interval is greater then granularity supports")
+			}
+		}
+	}
+
 	return nil
+}
+
+//NewLabelQuery Create a new Query with required fields for a Label Query
+func NewLabelQuery(groupBy group.Group) Query {
+	return Query{
+		GroupBy: groupBy,
+	}
+}
+
+//NewMetricQuery Create a new Query with required fields for a Metric Query
+func NewMetricQuery(gran granularity.Granularity, intervals []interval.Interval, agg []agg.Aggregation) Query {
+	return Query{
+		Granularity:  gran,
+		Intervals:    intervals,
+		Aggregations: agg,
+	}
 }
