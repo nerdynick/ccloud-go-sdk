@@ -54,5 +54,5 @@ func (client TelemetryClient) GetKafkaTopicsForMetric(cluster string, metric met
 
 //GetKafkaRequestTypes returns all the available request types for a given Kafka Cluster
 func (client TelemetryClient) GetKafkaRequestTypes(cluster string, inter interval.Interval) ([]string, error) {
-	return client.SendAttri(labels.ResourceKafka, cluster, metric.Requests, labels.MetricType, inter)
+	return client.SendAttri(labels.ResourceKafka, cluster, metric.KafkaServerRequests, labels.MetricType, inter)
 }

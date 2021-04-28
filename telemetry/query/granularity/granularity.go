@@ -5,6 +5,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/interval"
 	"github.com/rickb777/date/period"
 )
 
@@ -72,6 +73,11 @@ func (g Granularity) IsValid() bool {
 		}
 	}
 	return false
+}
+
+func (g Granularity) IsValidInterval(interval interval.Interval) bool {
+	dur := interval.Duration()
+	return dur >= g.Duration && dur <= g.MaxDuration
 }
 
 func newGranularity(g string) Granularity {

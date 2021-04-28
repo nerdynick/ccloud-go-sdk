@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nerdynick/ccloud-go-sdk/telemetry/query/granularity"
 	"github.com/rickb777/date/period"
 	"github.com/rickb777/date/timespan"
 )
@@ -23,23 +24,32 @@ func (i Interval) String() string {
 	return i.TimeSpan.Format(time.RFC3339, "/", i.withDuration)
 }
 
+func (i Interval) MinGranularity() granularity.Granularity {
+	for _, g := range granularity.AvailableGranularities {
+		if g.IsValidInterval(i) {
+			return g
+		}
+	}
+	return granularity.OneMin
+}
+
 func Between(start, end time.Time) Interval {
 	return Interval{
-		TimeSpan:     timespan.NewTimeSpan(start, end),
+		TimeSpan:     timespan.NewTimeSpan(start.Round(time.Minute), end.Round(time.Minute)),
 		withDuration: false,
 	}
 }
 
 func StartingFrom(start time.Time, duration time.Duration) Interval {
 	return Interval{
-		TimeSpan:     timespan.TimeSpanOf(start, duration),
+		TimeSpan:     timespan.TimeSpanOf(start.Round(time.Minute), duration),
 		withDuration: true,
 	}
 }
 
 func EndingAt(duration time.Duration, end time.Time) Interval {
 	return Interval{
-		TimeSpan:     timespan.TimeSpanOf(end, -duration),
+		TimeSpan:     timespan.TimeSpanOf(end.Round(time.Minute), -duration),
 		withDuration: true,
 	}
 }
