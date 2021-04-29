@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/nerdynick/ccloud-go-sdk/client/authorizer"
 	"github.com/nerdynick/ccloud-go-sdk/logging"
 	"go.uber.org/zap"
 )
@@ -24,12 +25,15 @@ const (
 type Client struct {
 	*logging.Loggable
 	Context          Context
+	Authorizer       authorizer.Authenticater
 	httpClient       http.Client
 	HTTPErrorHandler func(int, []byte) error
 }
 
 //Request Sends a Request synchronously
 func (client *Client) Request(request *http.Request) ([]byte, error) {
+	client.Authorizer.Authenticate(request)
+
 	res, err := client.httpClient.Do(request)
 	if res != nil {
 		defer res.Body.Close()
@@ -100,8 +104,6 @@ func (client *Client) NewRequest(method string, url string, body []byte) (*http.
 	if err != nil {
 		return nil, err
 	}
-
-	req.SetBasicAuth(client.Context.APIKey, client.Context.APISecret.Value())
 
 	req.Header.Add("Content-Type", "application/json")
 	if client.Context.UserAgent != "" {
@@ -202,12 +204,13 @@ func (client *Client) PostAsync(responseSupplier ResponseSupplier, url string, j
 }
 
 //New Creates a new CCloud Metrics HTTP Client
-func New(apiKey string, apiSecret string, baseURL string, httpErrorHandler func(int, []byte) error) Client {
+func New(authorizer authorizer.Authorizer, baseURL string, httpErrorHandler func(int, []byte) error) Client {
 	log := logging.New("CCloudAPIClient")
 
 	return Client{
 		Loggable:         log,
-		Context:          NewContext(apiKey, apiSecret, baseURL),
+		Context:          NewContext(baseURL),
+		Authorizer:       authorizer,
 		HTTPErrorHandler: httpErrorHandler,
 		httpClient: http.Client{
 			Timeout: DefaultRequestTimeout,
